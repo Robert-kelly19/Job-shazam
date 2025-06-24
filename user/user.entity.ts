@@ -1,5 +1,5 @@
 import { Column, CreateDateColumn, Entity,PrimaryGeneratedColumn,OneToMany,} from "typeorm";
-import { SavedJob } from "saved-job/saved-job.entity";
+import { SavedJob } from "../saved-job/saved-job.entity";
 
 @Entity()
 export class User {

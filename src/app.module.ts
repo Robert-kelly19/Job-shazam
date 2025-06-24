@@ -13,9 +13,9 @@ import {TypeOrmModule} from "@nestjs/typeorm";
       useFactory: (config: ConfigService) => ({
         type: "postgres",
         host: config.get<string>("DB_HOST"),
-        user: config.get<string>("DB_USER"),
+        username: config.get<string>("DB_USER"),
         password: config.get<string>("DB_PASSWORD"),
-        name: config.get<string>("DB_NAME"),
+        database: config.get<string>("DB_NAME"),
         port: config.get<number>("DB_PORT"),
         autoLoadEntities: true,
         synchronize: true,

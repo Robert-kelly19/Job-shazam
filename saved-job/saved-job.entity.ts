@@ -1,6 +1,6 @@
 import {CreateDateColumn, Entity,PrimaryGeneratedColumn,ManyToOne,} from "typeorm";
-import { User } from "user/user.entity";
-import { Job } from "job/job.entity";
+import { User } from "../user/user.entity";
+import { Job } from "../job/job.entity";
 @Entity()
 export class SavedJob{
     @PrimaryGeneratedColumn()
