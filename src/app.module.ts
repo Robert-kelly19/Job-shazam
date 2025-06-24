@@ -1,9 +1,13 @@
 import {Module} from "@nestjs/common";
 import {ConfigModule, ConfigService} from "@nestjs/config";
 import {TypeOrmModule} from "@nestjs/typeorm";
+import {ScheduleModule} from "@nestjs/schedule";
+import {CrawlerModule} from "./crawler/crawler.module";
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
+    CrawlerModule,
     ConfigModule.forRoot({
       isGlobal: true,
     }),
@@ -21,6 +25,7 @@ import {TypeOrmModule} from "@nestjs/typeorm";
         synchronize: true,
       }),
     }),
+    CrawlerModule,
   ],
 })
 export class AppModule {}
