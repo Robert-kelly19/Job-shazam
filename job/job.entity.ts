@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity,PrimaryGeneratedColumn,} from "typeorm";
+import { Column, CreateDateColumn, Entity,PrimaryGeneratedColumn,} from "typeorm";;
 @Entity()
 export class Job {
     @PrimaryGeneratedColumn()
@@ -9,6 +9,8 @@ export class Job {
     company: string;
     @Column()
     location: string;
+    @Column()
+    discription: string;
     @CreateDateColumn()
-    postedAt: Date
+    postedAt: Date;
 }

@@ -17,8 +17,7 @@ export class AppService implements OnModuleInit {
       }
       this.logger.log("connected to database successfully");
     } catch (error) {
-      this.logger.error("error while connecting to database");
-      throw error;
+      this.logger.error("error while connecting to database", error.message);
     }
   }
 }
