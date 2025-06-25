@@ -1,5 +1,5 @@
 import { Column, CreateDateColumn, Entity,PrimaryGeneratedColumn,} from "typeorm";
-import { IsNotEmpty,IsString,MaxLength} from "class-validator";
+import { IsNotEmpty,IsString,MaxLength,IsUrl} from "class-validator";
 export enum Type {
     REMOTE = 'remote',
     ONSITE = 'onsite',
@@ -35,9 +35,16 @@ export class Job {
     @IsString()
     @MaxLength(2000)
     description: string;
-    @Column()
+     @Column({ length: 100 })
+    @IsNotEmpty()
+    @IsString()
+    @MaxLength(100)
     position: string;
-    @Column()
+    @Column({ length: 500 })
+    @IsNotEmpty()
+    @IsString()
+    @IsUrl()
+    @MaxLength(500)
     joblink: string;
     @CreateDateColumn()
     postedAt: Date;
