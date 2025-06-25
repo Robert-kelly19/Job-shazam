@@ -56,6 +56,13 @@ export class UserService {
     const user = this.users.find(u => u.id === id);
     if (!user) throw new NotFoundException('User not found');
 
+        if (updateDto.email) {
+      const existingUser = this.users.find(u => u.email === updateDto.email && u.id !== id);
+      if (existingUser) {
+        throw new ConflictException('Email already in use');
+      }
+    }
+
     if (updateDto.firstname) user.firstname = updateDto.firstname;
     if (updateDto.lastname) user.lastname = updateDto.lastname;
     if (updateDto.email) user.email = updateDto.email;

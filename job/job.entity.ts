@@ -1,4 +1,5 @@
-import { Column, CreateDateColumn, Entity,PrimaryGeneratedColumn,} from "typeorm";;
+import { Column, CreateDateColumn, Entity,PrimaryGeneratedColumn,} from "typeorm";
+import { IsNotEmpty,IsString,MaxLength} from "class-validator";
 export enum Type {
     REMOTE = 'remote',
     ONSITE = 'onsite',
@@ -8,9 +9,15 @@ export enum Type {
 export class Job {
     @PrimaryGeneratedColumn()
     id: number;
-    @Column()
+    @Column({length:200})
+    @IsNotEmpty()
+    @IsString()
+    @MaxLength(200)
     title: string;
-    @Column()
+    @Column({length:200})
+    @IsNotEmpty()
+    @IsString()
+    @MaxLength(200)
     company: string;
     @Column({
         type: "enum",
@@ -18,10 +25,16 @@ export class Job {
         default: Type.REMOTE
     })
     worklocation: Type;
-    @Column()
+    @Column({length:200})
+    @IsNotEmpty()
+    @IsString()
+    @MaxLength(200)
     location: string;
-    @Column()
-    discription: string;
+    @Column({length:2000})
+    @IsNotEmpty()
+    @IsString()
+    @MaxLength(2000)
+    description: string;
     @Column()
     position: string;
     @Column()

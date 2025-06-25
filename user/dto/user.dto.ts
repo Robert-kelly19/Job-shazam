@@ -11,8 +11,10 @@ export class CreateUserDto {
     @MaxLength(25)
     lastname: string;
     @IsEmail()
+    @IsString()
     @IsNotEmpty()
     email: string;
+    @IsString()
     @IsNotEmpty()
     @MaxLength(225)
     password: string;
@@ -36,8 +38,9 @@ export class UserLoginDto {
     @IsEmail()
     @IsNotEmpty()
     email: string;
-    @MaxLength(225)
+    @IsString()
     @IsNotEmpty()
+    @MaxLength(225)
     password: string;
 }
 
@@ -58,7 +61,8 @@ export class DeleteUserDto {
     @IsEmail()
     @IsNotEmpty()
     email: string;
-    @MaxLength(225)
+    @IsString()
     @IsNotEmpty()
+    @MaxLength(225)
     password: string;
 }

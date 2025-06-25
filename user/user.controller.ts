@@ -15,7 +15,7 @@ export class UserController {
     return this.userService.login(loginUser);
   }
 
-  @Put('updateuser')
+  @Put('updateuser/:id')
   async updateuser(@Param('id')id:number, @Body()updateUserDto:UserUpdateDto){
     return this.userService.updateUser(id,updateUserDto);
   }
@@ -25,7 +25,7 @@ export class UserController {
     return this.userService.findAll();
   }
 
-  @Get('getUserById:id')
+  @Get('getUserById/:id')
   async getUserById(@Param('id',ParseIntPipe) id: number): Promise<GetUserDto>{
     return this.userService.findById(id);
   }
