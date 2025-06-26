@@ -123,7 +123,6 @@ export class CrawlerService {
     }
   }
 }
-
 interface SoftwareJob {
   title: string;
   company: string;
