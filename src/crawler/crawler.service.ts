@@ -9,7 +9,7 @@ export class CrawlerService {
   private browser: Browser | null = null;
 
   // Run every 5 minutes (adjust as needed)
-  @Cron(CronExpression.EVERY_30_SECONDS)
+  @Cron(CronExpression.EVERY_10_HOURS)
   async crawlSoftwareJobs() {
     this.logger.log("Starting software engineering jobs crawl...");
     try {
