@@ -9,7 +9,7 @@ export class CrawlerService {
   private browser: Browser | null = null;
 
   // Run every 5 minutes (adjust as needed)
-  @Cron(CronExpression.EVERY_10_HOURS)
+  @Cron(CronExpression.EVERY_30_SECONDS)
   async crawlSoftwareJobs() {
     this.logger.log("Starting software engineering jobs crawl...");
     try {
@@ -65,10 +65,16 @@ export class CrawlerService {
           // Extract location and salary
           const locationDiv = jobEl.querySelector("div.location");
           const location = locationDiv?.textContent?.trim() || "Remote";
-          const salary = locationDiv?.nextElementSibling?.textContent?.trim() || "Not specified";
 
-          // Extract tags
-          const tags = Array.from(jobEl.querySelectorAll("div.tags a.tag h3"))
+          // --- FIX FOR SALARY ---
+          let salary = "Not specified";
+          const salaryText = locationDiv?.nextElementSibling?.textContent?.trim() || "";
+          if (salaryText.includes("$") || salaryText.includes("€")) {
+            salary = salaryText;
+          }
+
+          // --- FIX FOR TAGS ---
+          const tags = Array.from(jobEl.querySelectorAll("td.tags h3")) // Simpler selector
             .map((tag) => tag.textContent?.trim())
             .filter((tag): tag is string => !!tag);
 
