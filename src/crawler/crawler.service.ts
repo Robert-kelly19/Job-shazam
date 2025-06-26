@@ -2,14 +2,18 @@ import {Injectable, Logger} from "@nestjs/common";
 import {Cron, CronExpression} from "@nestjs/schedule";
 import * as puppeteer from "puppeteer";
 import {Browser} from "puppeteer";
+import {JobService} from "job/job.service";
 
 @Injectable()
 export class CrawlerService {
   private readonly logger = new Logger(CrawlerService.name);
   private browser: Browser | null = null;
 
-  // Run every 5 minutes (adjust as needed)
-  @Cron(CronExpression.EVERY_30_SECONDS)
+  // Dependency Injection instance for job servvice
+  constructor(private readonly jobService: JobService) {}
+
+  // Run every 10hrs (adjust as needed)
+  @Cron(CronExpression.EVERY_6_HOURS)
   async crawlSoftwareJobs() {
     this.logger.log("Starting software engineering jobs crawl...");
     try {
@@ -21,9 +25,20 @@ export class CrawlerService {
       const jobs = await this.scrapeSoftwareJobs();
 
       if (jobs.length > 0) {
-        this.logger.log(`Found ${jobs.length} software engineering jobs`);
-        // Process jobs as needed (save to DB, send notifications, etc.)
-        console.log("Software Jobs:", jobs);
+        this.logger.log(`Found ${jobs.length} software engineering jobs. Saving to database...`);
+
+        // Replace the old console.log with  loop
+        for (const job of jobs) {
+          try {
+            // call jobService for each job
+            await this.jobService.create(job);
+          } catch (e) {
+            // If one job fails, log the error and continue with the rest
+            this.logger.error(`Failed to save job "${job.title}"`, e.stack);
+          }
+        }
+        this.logger.log("Finished processing all jobs.");
+        // --- END OF CHANGES ---
       } else {
         this.logger.warn("No software engineering jobs found");
       }
