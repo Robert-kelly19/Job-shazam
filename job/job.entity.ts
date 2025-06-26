@@ -1,10 +1,6 @@
 import { Column, CreateDateColumn, Entity,PrimaryGeneratedColumn,} from "typeorm";
-import { IsNotEmpty,IsString,MaxLength,IsUrl} from "class-validator";
-export enum Type {
-    REMOTE = 'remote',
-    ONSITE = 'onsite',
-    HYBRID = 'hybrid'
-}
+import { IsNotEmpty,IsString,MaxLength,IsUrl, IsArray} from "class-validator";
+
 @Entity()
 export class Job {
     @PrimaryGeneratedColumn()
@@ -19,33 +15,26 @@ export class Job {
     @IsString()
     @MaxLength(200)
     company: string;
-    @Column({
-        type: "enum",
-        enum: Type,
-        default: Type.REMOTE
-    })
-    worklocation: Type;
     @Column({length:200})
     @IsNotEmpty()
     @IsString()
     @MaxLength(200)
     location: string;
-    @Column({length:2000})
-    @IsNotEmpty()
-    @IsString()
-    @MaxLength(2000)
-    description: string;
-     @Column({ length: 100 })
-    @IsNotEmpty()
-    @IsString()
-    @MaxLength(100)
-    position: string;
+     @Column("text", { array: true })
+     @IsNotEmpty()
+     @IsArray()
+     tags: string[];
+     @CreateDateColumn()
+    postedAt: Date;
     @Column({ length: 500 })
     @IsNotEmpty()
     @IsString()
     @IsUrl()
     @MaxLength(500)
-    joblink: string;
-    @CreateDateColumn()
-    postedAt: Date;
+    applyUrl: string;
+    @Column()
+    @IsNotEmpty()
+    @IsString()
+    @MaxLength(200)
+    source: string
 }

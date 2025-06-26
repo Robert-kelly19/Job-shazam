@@ -6,9 +6,13 @@ import {AppService} from "./app.service";
 import {UserModule} from "user/user.module";
 import {SavedJobModule} from "saved-job/saved-job.module";
 import {JobModule} from "job/job.module";
+import {ScheduleModule} from "@nestjs/schedule";
+import {CrawlerModule} from "./crawler/crawler.module";
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
+    CrawlerModule,
     ConfigModule.forRoot({
       isGlobal: true,
     }),
@@ -37,6 +41,7 @@ import {JobModule} from "job/job.module";
     UserModule,
     SavedJobModule,
     JobModule,
+    CrawlerModule,
   ],
   controllers: [AppController],
   providers: [AppService],
