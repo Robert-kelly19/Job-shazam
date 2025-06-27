@@ -13,7 +13,7 @@ export class CrawlerService {
   constructor(private readonly jobService: JobService) {}
 
   // Run every 10hrs (adjust as needed)
-  @Cron(CronExpression.EVERY_6_HOURS)
+  @Cron(CronExpression.EVERY_30_SECONDS)
   async crawlSoftwareJobs() {
     this.logger.log("Starting software engineering jobs crawl...");
     try {
