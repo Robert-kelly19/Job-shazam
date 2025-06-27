@@ -7,7 +7,7 @@
   "license": "UNLICENSED",
   "type": "commonjs",
   "scripts": {
-    "build": "npx puppeteer browsers install chrome && nest build",
+    "build": "PUPPETEER_PRODUCT=chrome npm install puppeteer && nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
