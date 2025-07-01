@@ -1,5 +1,6 @@
 import { Column, CreateDateColumn, Entity,PrimaryGeneratedColumn,} from "typeorm";
 import { IsNotEmpty,IsString,MaxLength,IsUrl, IsArray} from "class-validator";
+import { Type } from "class-transformer";
 
 @Entity()
 export class Job {
@@ -23,6 +24,7 @@ export class Job {
      @Column("text", { array: true })
      @IsNotEmpty()
      @IsArray()
+     @Type(() => String)
      tags: string[];
      @CreateDateColumn()
     postedAt: Date;

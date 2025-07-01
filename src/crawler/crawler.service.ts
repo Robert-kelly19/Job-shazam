@@ -18,8 +18,13 @@ export class CrawlerService {
     this.logger.log("Starting software engineering jobs crawl...");
     try {
       this.browser = await puppeteer.launch({
-        args: ["--no-sandbox"],
-        headless: true, // Use new headless mode
+        headless: true,
+        args: [
+          "--no-sandbox",
+          "--disable-setuid-sandbox",
+          "--disable-dev-shm-usage",
+          "--disable-gpu",
+        ],
       });
 
       const jobs = await this.scrapeSoftwareJobs();
