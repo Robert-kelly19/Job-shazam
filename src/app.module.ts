@@ -41,7 +41,6 @@ import {CrawlerModule} from "./crawler/crawler.module";
     UserModule,
     SavedJobModule,
     JobModule,
-    CrawlerModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -1,3 +1,4 @@
+import { Transform } from "class-transformer";
 import {IsArray, IsDateString, IsNotEmpty,IsString,IsUrl,MaxLength,IsOptional} from "class-validator";
 
 
@@ -82,4 +83,27 @@ export class DisplayJobsDto {
     this.applyUrl = job.applyUrl;
     this.source = job.source;
   }
+}
+
+export class FilterJobDto {
+@IsOptional()
+  @Transform(({ value }) =>
+    typeof value === 'string' ? [value] : value
+  )
+  @IsArray()
+  @IsString({ each: true })
+  location?: string[];
+
+  @IsOptional()
+  @IsString()
+  @Transform(({ value }) => String(value))
+  salary?: string;
+
+@IsOptional()
+  @Transform(({ value }) =>
+    typeof value === 'string' ? [value] : value
+  )
+  @IsArray()
+  @IsString({ each: true })
+  tags?: string[];
 }

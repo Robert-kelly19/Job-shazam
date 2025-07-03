@@ -12,7 +12,7 @@ export class CrawlerService {
   // Dependency Injection instance for job servvice
   constructor(private readonly jobService: JobService) {}
 
-  // Run every 10hrs (adjust as needed)
+  // Run every 30_seconds (adjust as needed)
   @Cron(CronExpression.EVERY_30_SECONDS)
   async crawlSoftwareJobs() {
     this.logger.log("Starting software engineering jobs crawl...");
@@ -103,7 +103,7 @@ export class CrawlerService {
 
           // Extract apply URL
           const applyLink = jobEl.querySelector("a.preventLink") as HTMLAnchorElement;
-          const applyUrl = applyLink?.pathname ? `${applyLink.href}` : "";
+          const applyUrl = applyLink?.href || "";
 
           return {
             title,
