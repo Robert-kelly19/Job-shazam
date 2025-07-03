@@ -2,7 +2,7 @@ import { Column, CreateDateColumn, Entity,PrimaryGeneratedColumn,} from "typeorm
 import { IsNotEmpty,IsString,MaxLength,IsUrl, IsArray, IsOptional} from "class-validator";
 import { Type} from "class-transformer";
 
-@Entity()
+@Entity('job')
 export class Job {
     @PrimaryGeneratedColumn()
     id: number;
