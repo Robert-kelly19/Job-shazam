@@ -26,6 +26,11 @@ export class Job {
     @IsArray()
     @Type(()=>String)
     location: string[];
+    @Column()
+    @IsString()
+    @IsNotEmpty()
+    @MaxLength(100)
+    salary: string;
     @Column("text", { array: true })
     @IsNotEmpty()
     @IsArray()
@@ -43,5 +48,5 @@ export class Job {
     @IsNotEmpty()
     @IsString()
     @MaxLength(200)
-    source: string
+    source: string;
 }

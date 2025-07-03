@@ -23,6 +23,10 @@ export class GetJobsDto {
   @IsArray()
   location: string[];
 
+  @IsString()
+  @IsNotEmpty()
+  salary: string;
+  
   @IsArray()
   @IsString({ each: true }) 
   tags?: string[];
@@ -49,6 +53,7 @@ export class DisplayJobsDto {
   company: string;
   description?: string;
   location: string[];
+   salary: string;
   tags: string[];
   postedAt: Date;
   applyUrl: string;
@@ -60,6 +65,7 @@ export class DisplayJobsDto {
     company: string;
     description?: string;
     location: string[];
+    salary: string;
     tags: string[];
     postedAt: Date;
     applyUrl: string;
@@ -71,6 +77,7 @@ export class DisplayJobsDto {
     this.description = job.description
     this.location = job.location;
     this.tags = job.tags;
+    this.salary = job.salary
     this.postedAt = job.postedAt;
     this.applyUrl = job.applyUrl;
     this.source = job.source;
