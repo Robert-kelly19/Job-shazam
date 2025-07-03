@@ -84,7 +84,7 @@ export class CrawlerService {
 
           // Extract location and salary
           const locationDiv = jobEl.querySelector("div.location");
-          const location = locationDiv?.textContent?.trim() || "Remote";
+          const location = [locationDiv?.textContent?.trim() || "Remote"];
 
           // --- FIX FOR SALARY ---
           let salary = "Not specified";
@@ -146,7 +146,7 @@ export class CrawlerService {
 interface SoftwareJob {
   title: string;
   company: string;
-  location: string;
+  location: string[];
   salary: string;
   tags: string[];
   postedAt: string;

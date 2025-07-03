@@ -13,6 +13,10 @@ export class JobService {
   ) {}
 
   async create(jobDto: GetJobsDto): Promise<DisplayJobsDto> {
+    if(jobDto.description === null){
+      jobDto.description = ""
+    }
+
     const exists = await this.jobRepo.findOne({
       where: { applyUrl: jobDto.applyUrl },
     });

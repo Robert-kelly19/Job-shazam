@@ -1,4 +1,4 @@
-import {IsArray, IsDateString, IsNotEmpty,IsString,IsUrl,MaxLength,} from "class-validator";
+import {IsArray, IsDateString, IsNotEmpty,IsString,IsUrl,MaxLength,IsOptional} from "class-validator";
 
 
 export class GetJobsDto {
@@ -12,10 +12,16 @@ export class GetJobsDto {
   @MaxLength(50)
   company: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
-  @MaxLength(50)
-  location: string;
+  @MaxLength(1000)
+  description?: string;
+
+
+  @IsNotEmpty()
+  @IsString({ each : true})
+  @IsArray()
+  location: string[];
 
   @IsArray()
   @IsString({ each: true }) 
@@ -41,7 +47,8 @@ export class DisplayJobsDto {
   id: number;
   title: string;
   company: string;
-  location: string;
+  description?: string;
+  location: string[];
   tags: string[];
   postedAt: Date;
   applyUrl: string;
@@ -51,7 +58,8 @@ export class DisplayJobsDto {
     id: number;
     title: string;
     company: string;
-    location: string;
+    description?: string;
+    location: string[];
     tags: string[];
     postedAt: Date;
     applyUrl: string;
@@ -60,6 +68,7 @@ export class DisplayJobsDto {
     this.id = job.id;
     this.title = job.title;
     this.company = job.company;
+    this.description = job.description
     this.location = job.location;
     this.tags = job.tags;
     this.postedAt = job.postedAt;

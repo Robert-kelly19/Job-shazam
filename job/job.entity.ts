@@ -1,6 +1,6 @@
 import { Column, CreateDateColumn, Entity,PrimaryGeneratedColumn,} from "typeorm";
-import { IsNotEmpty,IsString,MaxLength,IsUrl, IsArray} from "class-validator";
-import { Type } from "class-transformer";
+import { IsNotEmpty,IsString,MaxLength,IsUrl, IsArray, IsOptional} from "class-validator";
+import { Type} from "class-transformer";
 
 @Entity()
 export class Job {
@@ -16,17 +16,22 @@ export class Job {
     @IsString()
     @MaxLength(200)
     company: string;
-    @Column({length:200})
-    @IsNotEmpty()
+    @Column({length:1000, nullable: true})
+    @IsOptional()
     @IsString()
-    @MaxLength(200)
-    location: string;
-     @Column("text", { array: true })
-     @IsNotEmpty()
-     @IsArray()
-     @Type(() => String)
-     tags: string[];
-     @CreateDateColumn()
+    @MaxLength(1000)
+    description?: string;
+    @Column("text",{array : true})
+    @IsNotEmpty()
+    @IsArray()
+    @Type(()=>String)
+    location: string[];
+    @Column("text", { array: true })
+    @IsNotEmpty()
+    @IsArray()
+    @Type(() => String)
+    tags: string[];
+    @CreateDateColumn()
     postedAt: Date;
     @Column({ length: 500 })
     @IsNotEmpty()
