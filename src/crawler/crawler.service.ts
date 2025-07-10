@@ -89,8 +89,14 @@ export class CrawlerService {
             const $$ = cheerio.load(jobHtml);
 
             // Inspect the job detail page in browser to identify correct selector
-            description = $$(".description").text().trim() || "No description found";
-            this.logger.log(`Fetched description for ${description} characters`);
+            description =
+              $$(".description").text().trim().replace(/\s+/g, " ") || "No description found";
+
+            if (!description || description === "No description found") {
+              this.logger.warn(`No description found for ${title}. Check page structure.`);
+            } else {
+              this.logger.log(`Fetched description for ${title} with ${description}`);
+            }
           } catch (descErr) {
             this.logger.error(`Error fetching description for ${title}: ${descErr.message}`);
             description = "Failed to fetch description";
