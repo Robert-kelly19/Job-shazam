@@ -108,6 +108,7 @@ export class CrawlerService {
           return {
             title,
             company,
+            // description,
             location,
             salary,
             tags,
@@ -143,6 +144,7 @@ export class CrawlerService {
     }
   }
 }
+
 interface SoftwareJob {
   title: string;
   company: string;
@@ -152,4 +154,5 @@ interface SoftwareJob {
   postedAt: string;
   applyUrl: string;
   source: string;
+  description?: string;
 }

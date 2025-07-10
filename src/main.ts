@@ -6,7 +6,7 @@ import {CorsOptions} from "@nestjs/common/interfaces/external/cors-options.inter
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  app.useGlobalPipes(new ValidationPipe({transform: true}));
+  app.useGlobalPipes(new ValidationPipe({transform: true, whitelist: true}));
 
   const allowedOrigins: string[] = ["http://localhost:3000"];
 
@@ -28,6 +28,6 @@ async function bootstrap() {
 
   const port = process.env.PORT ?? 3000;
   await app.listen(port);
-  Logger.debug(`Server running on: ${port}`);
+  Logger.log(`Server running on: ${port}`);
 }
 bootstrap();

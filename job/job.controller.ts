@@ -8,7 +8,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { JobService } from './job.service';
-import { GetJobsDto,DisplayJobsDto, FilterJobDto } from './dto/job.dto';
+import { GetJobsDto, DisplayJobsDto, FilterJobDto } from './dto/job.dto';
 
 @Controller('jobs')
 export class JobController {
@@ -19,6 +19,13 @@ export class JobController {
     return this.jobService.create(jobDto);
   }
 
+  @Get('filter')
+  async filterJobs(@Query() filterDto: FilterJobDto) {
+  console.log('🧪 Filter DTO:', filterDto);
+  return this.jobService.getFilterJobs(filterDto);
+  }
+
+
   @Get()
   async findAll(): Promise<DisplayJobsDto[]> {
     return this.jobService.findAll();
@@ -27,10 +34,5 @@ export class JobController {
   @Get(':id')
   async findOne(@Param('id', ParseIntPipe) id: number): Promise<DisplayJobsDto | null> {
     return this.jobService.findOne(id);
-  }
-
-  @Get()
-  async getFilterJobs(@Query() filterDto: FilterJobDto) {
-    return this.jobService.getFilterJobs(filterDto)
   }
 }

@@ -1,9 +1,9 @@
-// src/jobs/job.service.ts
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Job } from './job.entity';
 import { GetJobsDto, DisplayJobsDto, FilterJobDto } from './dto/job.dto';
+
 
 
 @Injectable()
@@ -14,27 +14,31 @@ export class JobService {
   ) {}
 
   async create(jobDto: GetJobsDto): Promise<DisplayJobsDto> {
-    if(jobDto.description === null){
-      jobDto.description = ""
+ 
+  
+    if (!jobDto.description) {
+      jobDto.description = '';
     }
 
-    const exists = await this.jobRepo.findOne({
+    const existingJob = await this.jobRepo.findOne({
       where: { applyUrl: jobDto.applyUrl },
     });
 
-    if (exists) {
-      return new DisplayJobsDto(exists);
+    if (existingJob) {
+      return new DisplayJobsDto(existingJob);
     }
 
+  
     const job = this.jobRepo.create(jobDto);
-    const saved = await this.jobRepo.save(job);
-    return new DisplayJobsDto(saved);
+    const savedJob = await this.jobRepo.save(job);
+    return new DisplayJobsDto(savedJob);
   }
 
   async findAll(): Promise<DisplayJobsDto[]> {
     const jobs = await this.jobRepo.find({
       order: { postedAt: 'DESC' },
     });
+
     return jobs.map((job) => new DisplayJobsDto(job));
   }
 
@@ -43,13 +47,13 @@ export class JobService {
     return job ? new DisplayJobsDto(job) : null;
   }
 
-  async getFilterJobs(filterDto: FilterJobDto): Promise<Job[]> {
+async getFilterJobs(filterDto: FilterJobDto): Promise<Job[]> {
   const { location, salary, tags } = filterDto;
 
   const query = this.jobRepo.createQueryBuilder('job');
 
   if (location?.length) {
-    query.andWhere('job.location && :location', { location });
+    query.andWhere('job.location && ARRAY[:...location]', { location });
   }
 
   if (salary) {
@@ -57,11 +61,11 @@ export class JobService {
   }
 
   if (tags?.length) {
-    query.andWhere('job.tags && :tags', { tags });
+    query.andWhere('job.tags && ARRAY[:...tags]', { tags });
   }
 
   return query.getMany();
 }
 
-
+  
 }

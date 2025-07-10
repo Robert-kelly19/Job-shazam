@@ -86,10 +86,8 @@ export class DisplayJobsDto {
 }
 
 export class FilterJobDto {
-@IsOptional()
-  @Transform(({ value }) =>
-    typeof value === 'string' ? [value] : value
-  )
+  @IsOptional()
+  @Transform(({ value }) => (Array.isArray(value) ? value : value.split(',')))
   @IsArray()
   @IsString({ each: true })
   location?: string[];
@@ -99,10 +97,8 @@ export class FilterJobDto {
   @Transform(({ value }) => String(value))
   salary?: string;
 
-@IsOptional()
-  @Transform(({ value }) =>
-    typeof value === 'string' ? [value] : value
-  )
+  @IsOptional()
+  @Transform(({ value }) => (Array.isArray(value) ? value : value.split(',')))
   @IsArray()
   @IsString({ each: true })
   tags?: string[];
