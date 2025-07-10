@@ -1,143 +1,13 @@
 import {Injectable, Logger} from "@nestjs/common";
 import {Cron, CronExpression} from "@nestjs/schedule";
-import * as puppeteer from "puppeteer";
-import {Browser} from "puppeteer";
+import puppeteer from "puppeteer-extra";
+import StealthPlugin from "puppeteer-extra-plugin-stealth";
+import {Browser, Page} from "puppeteer";
+import * as cheerio from "cheerio";
 import {JobService} from "job/job.service";
 
-@Injectable()
-export class CrawlerService {
-  private readonly logger = new Logger(CrawlerService.name);
-  private browser: Browser | null = null;
+puppeteer.use(StealthPlugin());
 
-  // Dependency Injection instance for job servvice
-  constructor(private readonly jobService: JobService) {}
-
-  // Run every 10hrs (adjust as needed)
-  @Cron(CronExpression.EVERY_6_HOURS)
-  async crawlSoftwareJobs() {
-    this.logger.log("Starting software engineering jobs crawl...");
-    try {
-      this.browser = await puppeteer.launch({
-        args: ["--no-sandbox"],
-        headless: true, // Use new headless mode
-      });
-
-      const jobs = await this.scrapeSoftwareJobs();
-
-      if (jobs.length > 0) {
-        this.logger.log(`Found ${jobs.length} software engineering jobs. Saving to database...`);
-
-        // Replace the old console.log with  loop
-        for (const job of jobs) {
-          try {
-            // call jobService for each job
-            await this.jobService.create(job);
-          } catch (e) {
-            // If one job fails, log the error and continue with the rest
-            this.logger.error(`Failed to save job "${job.title}"`, e.stack);
-          }
-        }
-        this.logger.log("Finished processing all jobs.");
-        // --- END OF CHANGES ---
-      } else {
-        this.logger.warn("No software engineering jobs found");
-      }
-    } catch (error) {
-      this.logger.error("Crawling failed", error.stack);
-    } finally {
-      if (this.browser) {
-        await this.browser.close();
-      }
-    }
-  }
-
-  private async scrapeSoftwareJobs(): Promise<SoftwareJob[]> {
-    if (!this.browser) throw new Error("Browser not initialized");
-    const page = await this.browser.newPage();
-
-    // Set user agent to avoid bot detection
-    await page.setUserAgent(
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-    );
-
-    try {
-      await page.goto("https://remoteok.com/remote-dev-jobs", {
-        waitUntil: "domcontentloaded",
-        timeout: 60000,
-      });
-
-      // Wait for job listings to load
-      await page.waitForSelector("tr.job", {timeout: 5000});
-
-      const jobs = await page.evaluate(() => {
-        const jobElements = Array.from(document.querySelectorAll("tr.job:not(.expand)"));
-
-        return jobElements.map((jobEl) => {
-          // Extract basic information
-          const title = jobEl.querySelector('h2[itemprop="title"]')?.textContent?.trim() || "";
-          const company = jobEl.querySelector('h3[itemprop="name"]')?.textContent?.trim() || "";
-
-          // Extract location and salary
-          const locationDiv = jobEl.querySelector("div.location");
-          const location = locationDiv?.textContent?.trim() || "Remote";
-
-          // --- FIX FOR SALARY ---
-          let salary = "Not specified";
-          const salaryText = locationDiv?.nextElementSibling?.textContent?.trim() || "";
-          if (salaryText.includes("$") || salaryText.includes("€")) {
-            salary = salaryText;
-          }
-
-          // --- FIX FOR TAGS ---
-          const tags = Array.from(jobEl.querySelectorAll("td.tags h3")) // Simpler selector
-            .map((tag) => tag.textContent?.trim())
-            .filter((tag): tag is string => !!tag);
-
-          // Extract posting date
-          const postedAt = jobEl.querySelector("time")?.getAttribute("datetime") || "";
-
-          // Extract apply URL
-          const applyLink = jobEl.querySelector("a.preventLink") as HTMLAnchorElement;
-          const applyUrl = applyLink?.pathname ? `${applyLink.href}` : "";
-
-          return {
-            title,
-            company,
-            location,
-            salary,
-            tags,
-            postedAt,
-            applyUrl,
-            source: "RemoteOK",
-          };
-        });
-      });
-
-      // More inclusive filtering
-      const softwareJobs = jobs.filter((job) => {
-        // Check if title contains relevant keywords
-        const titleMatch =
-          /(software|backend|frontend|full.?stack|devops|mobile|developer|engineer)/i.test(
-            job.title,
-          );
-
-        // Check if tags contain relevant keywords
-        const tagsMatch = job.tags.some((tag) =>
-          /(software|backend|frontend|full.?stack|devops|mobile|developer|engineer)/i.test(tag),
-        );
-
-        return titleMatch || tagsMatch;
-      });
-
-      return softwareJobs;
-    } catch (error) {
-      this.logger.error(`Scraping failed: ${error.message}`);
-      return [];
-    } finally {
-      await page.close();
-    }
-  }
-}
 interface SoftwareJob {
   title: string;
   company: string;
@@ -147,4 +17,114 @@ interface SoftwareJob {
   postedAt: string;
   applyUrl: string;
   source: string;
+  description: string;
+  type?: string;
+  category?: string;
+  requirements?: string[];
+  benefits?: string[];
+}
+
+@Injectable()
+export class CrawlerService {
+  private readonly logger = new Logger(CrawlerService.name);
+
+  constructor(private readonly jobService: JobService) {}
+
+  @Cron(CronExpression.EVERY_30_SECONDS)
+  async scrapeRemoteOkJobs(): Promise<void> {
+    let browser: Browser | null = null;
+    let page: Page | null = null;
+
+    try {
+      this.logger.log("Launching puppeteer browser...");
+      browser = await puppeteer.launch({
+        headless: true,
+        args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      });
+
+      page = await browser.newPage();
+
+      this.logger.log("Navigating to RemoteOK...");
+      await page.goto("https://remoteok.com/remote-dev-jobs", {
+        waitUntil: "networkidle2",
+        timeout: 60000,
+      });
+
+      const html = await page.content();
+      const $ = cheerio.load(html);
+
+      const jobs: SoftwareJob[] = [];
+
+      const jobRows = $("tr.job");
+
+      this.logger.log(`Found ${jobRows.length} jobs on RemoteOK`);
+
+      for (let i = 0; i < jobRows.length; i++) {
+        const el = jobRows[i];
+        const row = $(el);
+
+        const title = row.find("h2").text().trim() || "No title";
+        const company = row.find(".companyLink h3").text().trim() || "No company";
+        const location = row.find(".location").text().trim() || "Remote";
+        const salary = row.find(".salary").text().trim() || "Not Specified";
+        const postedAt = row.find("time").attr("datetime") || new Date().toISOString();
+        const applyUrl = row.attr("data-url") ? `https://remoteok.com${row.attr("data-url")}` : "";
+
+        const tags: string[] = [];
+        row.find(".tag").each((i, el) => {
+          const tag = $(el).text().trim();
+          if (tag) tags.push(tag);
+        });
+
+        // Visit each job's applyUrl to extract full description
+        let description = "";
+        if (applyUrl) {
+          try {
+            this.logger.log(`Fetching job description for: ${title}`);
+            await page.goto(applyUrl, {
+              waitUntil: "networkidle2",
+              timeout: 60000,
+            });
+            const jobHtml = await page.content();
+            const $$ = cheerio.load(jobHtml);
+
+            // Inspect the job detail page in browser to identify correct selector
+            description = $$(".description").text().trim() || "No description found";
+            this.logger.log(`Fetched description for ${description} characters`);
+          } catch (descErr) {
+            this.logger.error(`Error fetching description for ${title}: ${descErr.message}`);
+            description = "Failed to fetch description";
+          }
+        }
+
+        const job: SoftwareJob = {
+          title,
+          company,
+          location,
+          salary,
+          tags,
+          postedAt,
+          applyUrl,
+          source: "remoteok",
+          description,
+        };
+
+        jobs.push(job);
+      }
+
+      this.logger.debug(JSON.stringify(jobs.slice(0, 3), null, 2));
+      this.logger.log(`Scraped ${jobs.length} jobs with descriptions from RemoteOK.`);
+
+      // Store in DB via JobService
+      for (const job of jobs) {
+        await this.jobService.create(job);
+      }
+    } catch (error) {
+      this.logger.error(`Error scraping RemoteOK: ${error.message}`, error.stack);
+    } finally {
+      if (page) await page.close();
+      if (browser) await browser.close();
+      this.logger.log("Puppeteer browser closed.");
+    }
+  }
 }
