@@ -20,9 +20,8 @@ export class GetJobsDto {
 
 
   @IsNotEmpty()
-  @IsString({ each : true})
-  @IsArray()
-  location: string[];
+  @IsString()
+  location: string;
 
   @IsString()
   @IsNotEmpty()
@@ -53,8 +52,8 @@ export class DisplayJobsDto {
   title: string;
   company: string;
   description?: string;
-  location: string[];
-   salary: string;
+  location: string;
+  salary: string;
   tags: string[];
   postedAt: Date;
   applyUrl: string;
@@ -65,7 +64,7 @@ export class DisplayJobsDto {
     title: string;
     company: string;
     description?: string;
-    location: string[];
+    location: string;
     salary: string;
     tags: string[];
     postedAt: Date;
@@ -87,10 +86,8 @@ export class DisplayJobsDto {
 
 export class FilterJobDto {
   @IsOptional()
-  @Transform(({ value }) => (Array.isArray(value) ? value : value.split(',')))
-  @IsArray()
   @IsString({ each: true })
-  location?: string[];
+  location?: string;
 
   @IsOptional()
   @IsString()

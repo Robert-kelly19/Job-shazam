@@ -16,16 +16,14 @@ export class Job {
     @IsString()
     @MaxLength(200)
     company: string;
-    @Column({length:1000, nullable: true})
+    @Column({nullable: true})
     @IsOptional()
     @IsString()
-    @MaxLength(1000)
     description?: string;
     @Column("text",{array : true})
     @IsNotEmpty()
-    @IsArray()
-    @Type(()=>String)
-    location: string[];
+    @IsString()
+    location: string;
     @Column()
     @IsString()
     @IsNotEmpty()

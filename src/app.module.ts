@@ -8,6 +8,7 @@ import {SavedJobModule} from "saved-job/saved-job.module";
 import {JobModule} from "job/job.module";
 import {ScheduleModule} from "@nestjs/schedule";
 import {CrawlerModule} from "./crawler/crawler.module";
+import {MailModule} from "./mail/mail.module";
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import {CrawlerModule} from "./crawler/crawler.module";
     UserModule,
     SavedJobModule,
     JobModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [AppService],
