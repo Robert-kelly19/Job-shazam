@@ -35,3 +35,13 @@ export class GetMailDto {
   @IsString()
   text: string;
 }
+
+export class SendLogInMail {
+  @IsEmail()
+  @IsOptional()
+  to: string;
+
+  @IsString()
+  @IsNotEmpty()
+  link: string;
+}

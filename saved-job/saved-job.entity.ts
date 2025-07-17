@@ -1,16 +1,19 @@
-import {CreateDateColumn, Entity,PrimaryGeneratedColumn,ManyToOne,} from "typeorm";
+import {CreateDateColumn, Entity,PrimaryGeneratedColumn,ManyToOne, Column,} from "typeorm";
 import { User } from "../user/user.entity";
 import { Job } from "../job/job.entity";
 @Entity()
 export class SavedJob{
-    @PrimaryGeneratedColumn()
-  id: number;
+    @PrimaryGeneratedColumn('uuid')
+  id: string;
 
   @ManyToOne(() => User, user => user.savedJobs, { onDelete: 'CASCADE' })
   user: User;
 
-  @ManyToOne(() => Job, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Job, job => job.savedByUsers, { onDelete: 'CASCADE' })
   job: Job;
+
+  @Column({default: 'saved'})
+  status: 'saved' | 'applied' | 'rejected' | 'recruited' | 'unresponsive';
 
   @CreateDateColumn()
   savedAt: Date;

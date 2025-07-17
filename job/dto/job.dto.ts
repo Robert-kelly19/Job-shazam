@@ -48,7 +48,7 @@ export class GetJobsDto {
 
 
 export class DisplayJobsDto {
-  id: number;
+  id: string;
   title: string;
   company: string;
   description?: string;
@@ -60,7 +60,7 @@ export class DisplayJobsDto {
   source: string;
 
   constructor(job: {
-    id: number;
+    id: string;
     title: string;
     company: string;
     description?: string;

@@ -62,4 +62,19 @@ export class MailService {
       return error;
     }
   }
+
+  async SendLogInMail(email: string, link: string) {
+    const mailOptions = {
+      from: `"JobShazam"<${this.config.get<string>("MAIL_USER")}>`,
+      to: email,
+      subject: "JobShazam Login Link",
+      html: `<p>Click to login: <a href="${link}">${link}</a></p>`,
+    };
+    try {
+      const info = await this.transporter.sendMail(mailOptions);
+      return info.response;
+    } catch (error) {
+      return error;
+    }
+  }
 }

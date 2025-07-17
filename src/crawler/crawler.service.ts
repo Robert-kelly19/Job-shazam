@@ -97,8 +97,8 @@ export class CrawlerService implements OnModuleInit {
 
         const title = row.find("h2").text().trim() || "No title";
         const company = row.find(".companyLink h3").text().trim() || "No company";
-        const location = row.find(".location").text().trim() || "Remote";
-        const salary = row.find(".salary").text().trim() || "Not Specified";
+        const location = row.find(".location.tooltip-set a").text().trim() || "Remote";
+        const salary = row.find(".location").text().trim() || "Not Specified";
         const postedAt = row.find("time").attr("datetime") || new Date().toISOString();
         const applyUrl = row.attr("data-url") ? `https://remoteok.com${row.attr("data-url")}` : "";
 

@@ -21,7 +21,7 @@ export class JobController {
 
   @Get('filter')
   async filterJobs(@Query() filterDto: FilterJobDto) {
-  console.log('🧪 Filter DTO:', filterDto);
+  console.log('Filter DTO:', filterDto);
   return this.jobService.getFilterJobs(filterDto);
   }
 
@@ -32,7 +32,7 @@ export class JobController {
   }
 
   @Get(':id')
-  async findOne(@Param('id', ParseIntPipe) id: number): Promise<DisplayJobsDto | null> {
+  async findOne(@Param('id', ParseIntPipe) id: string): Promise<DisplayJobsDto | null> {
     return this.jobService.findOne(id);
   }
 }

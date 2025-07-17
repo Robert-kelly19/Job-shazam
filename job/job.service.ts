@@ -42,7 +42,7 @@ export class JobService {
     return jobs.map((job) => new DisplayJobsDto(job));
   }
 
-  async findOne(id: number): Promise<DisplayJobsDto | null> {
+  async findOne(id: string): Promise<DisplayJobsDto | null> {
     const job = await this.jobRepo.findOne({ where: { id } });
     return job ? new DisplayJobsDto(job) : null;
   }
