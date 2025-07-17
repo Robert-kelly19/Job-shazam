@@ -278,27 +278,80 @@ export class CrawlerService implements OnModuleInit {
 
   private async scrapeRemoteCo(browser: Browser): Promise<SoftwareJob[]> {
     const page = await browser.newPage();
+    const jobs: SoftwareJob[] = [];
+
     try {
       await page.goto("https://remote.co/remote-jobs/developer/", {waitUntil: "domcontentloaded"});
       const html = await page.content();
       const $ = cheerio.load(html);
-      const jobs: SoftwareJob[] = [];
-      $("a.job_listing").each((i, el) => {
-        const listing = $(el);
-        const title = listing.find(".position_title").text().trim();
-        if (!title) return;
-        jobs.push({
-          title,
-          company: listing.find("span.company_name").text().trim().replace(" &nbsp; ", ""),
-          description: `Job for ${title}. More details at the application link.`,
-          location: "Remote",
-          postedAt: new Date(listing.find(".date").text().trim()).toISOString(),
-          applyUrl: listing.attr("href") || "",
-          source: "Remote.co",
-          tags: [],
-          type: "Remote",
-        });
-      });
+
+      const listings = $("div.sc-fBtIwJ.cVivxR").toArray();
+
+      for (const el of listings) {
+        try {
+          const listing = $(el);
+
+          // Extract job title with fallback
+          const title =
+            listing.find("a.sc-hLtSKV").text().trim() ||
+            listing.find("a").first().text().trim() ||
+            "No title";
+
+          // Extract company name with fallback
+          const company =
+            listing.find("h3.sc-igdSGC").text().trim() ||
+            listing.find("h3").first().text().trim() ||
+            "No company";
+
+          // Extract location
+          const location = listing.find("span.sc-cXghZX").text().trim() || "Remote";
+
+          // Extract salary if available in tags
+          const tags = listing
+            .find("ul.sc-gVcvut li")
+            .map((i, tag) => $(tag).text().trim())
+            .get();
+
+          const salary = tags.find((t) => t.toLowerCase().includes("cad")) || "Not Specified";
+
+          // Extract posted date
+          // const postedAtRaw = listing.find("div.sc-dUSlRo span").text().trim();
+          // const postedAt = postedAtRaw || new Date().toISOString() || "not spacified";
+
+          // Build apply URL
+          const relativeUrl = listing.find("a.sc-hLtSKV").attr("href") || "";
+          const applyUrl = relativeUrl.startsWith("http")
+            ? relativeUrl
+            : "https://remote.co" + relativeUrl;
+
+          // Random delay
+          await new Promise((res) => setTimeout(res, Math.random() * 1500 + 500));
+
+          // Open detail page to scrape full description
+          const description = "Visit the job link for full description.";
+
+          // Push final structured job
+          jobs.push({
+            title,
+            company,
+            location,
+            salary,
+            tags,
+            postedAt: "not specified",
+            applyUrl,
+            source: "Remote.co",
+            description,
+            type: "Remote",
+          });
+        } catch (jobErr) {
+          this.logger.warn(`Failed to scrape one Remote.co job: ${jobErr.message}`);
+          continue;
+        }
+      }
+
+      return jobs;
+    } catch (err) {
+      this.logger.error(`Failed to scrape Remote.co: ${err.message}`);
       return jobs;
     } finally {
       await page.close();
