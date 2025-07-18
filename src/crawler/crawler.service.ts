@@ -97,37 +97,37 @@ export class CrawlerService implements OnModuleInit {
     const jobs: SoftwareJob[] = [];
     try {
       await page.goto("https://remoteok.com/remote-dev-jobs", {waitUntil: "domcontentloaded"});
-
       const html = await page.content();
       const $ = cheerio.load(html);
-
       const jobRows = $("tr.job").toArray();
-
       for (const el of jobRows) {
         try {
           const row = $(el);
-
           // Fallback logic for title
           const title =
             row.find('h2[itemprop="title"]').text().trim() ||
             row.find(".position_title, [class*=position], h3").first().text().trim();
-
           if (!title) continue;
-
           const company =
             row.find('h3[itemprop="name"]').text().trim() ||
             row.find(".company, [class*=company], h3").first().text().trim() ||
             "Unknown";
-
-          const salary = row.find(".salary").text().trim() || "Not Specified";
-
+          const salary =
+            row
+              .find("div.location")
+              .filter(function () {
+                return $(this).text().includes(":moneybag:");
+              })
+              .text()
+              .trim() || "Not Specified";
+          if (!salary) {
+            this.logger.warn(`No salary found for job: ${title}`);
+          }
           const tags = row
             .find(".tags .tag, [class*=tag]")
             .map((i, tag) => $(tag).text().trim())
             .get();
-
           const applyUrl = "https://remoteok.com" + row.attr("data-url");
-
           // Scrape job description from detail page
           let description = "";
           if (applyUrl) {
@@ -136,13 +136,23 @@ export class CrawlerService implements OnModuleInit {
               await detailPage.goto(applyUrl, {waitUntil: "domcontentloaded"});
               const detailHtml = await detailPage.content();
               const $$ = cheerio.load(detailHtml);
-
               // Robust description selector fallback logic
-              description =
-                $$(".description").text().trim() ||
-                $$("[class*=description]").text().trim() ||
-                $$("div[itemprop='description']").text().trim() ||
-                "No description provided.";
+              const paragraphs = $$(".show-right p")
+                .slice(0, 3)
+                .map(function () {
+                  return $$(this).text().trim();
+                })
+                .get();
+              if (paragraphs.length > 0) {
+                description = paragraphs.join("\n\n");
+              } else {
+                // Fallback robust description selector logic
+                description =
+                  $$(".description").text().trim() ||
+                  $$("[class*=description]").text().trim() ||
+                  $$("div[itemprop='description']").text().trim() ||
+                  "Apply on the job link for full description.";
+              }
             } catch (descErr) {
               description = "Failed to scrape description.";
               this.logger.warn(`Description scrape failed for ${title}: ${descErr.message}`);
@@ -150,7 +160,6 @@ export class CrawlerService implements OnModuleInit {
               await detailPage.close();
             }
           }
-
           jobs.push({
             title,
             company,
@@ -162,14 +171,12 @@ export class CrawlerService implements OnModuleInit {
             description,
             type: "Remote",
           });
-
           // Random delay to reduce bot detection
           await new Promise((res) => setTimeout(res, Math.random() * 500 + 300));
         } catch (jobErr) {
           this.logger.warn(`Failed to scrape one job listing: ${jobErr.message}`);
         }
       }
-
       return jobs;
     } finally {
       await page.close();
@@ -217,6 +224,16 @@ export class CrawlerService implements OnModuleInit {
             .map((i, tag) => $(tag).text().trim())
             .get();
 
+          const salary =
+            listing
+              .find(".new-listing__categories__category")
+              .filter(function () {
+                return $(this).text().includes("$");
+              })
+              .first()
+              .text()
+              .trim() || "Not Specified";
+
           //  Random delay to reduce bot detection
           await new Promise((res) => setTimeout(res, Math.random() * 1500 + 500));
 
@@ -246,6 +263,7 @@ export class CrawlerService implements OnModuleInit {
             title,
             company,
             location,
+            salary,
             description,
             applyUrl,
             tags,
