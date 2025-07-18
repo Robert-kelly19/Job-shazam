@@ -31,11 +31,11 @@ export class Job {
     @IsString()
     location: string;
 
-    @Column()
+    @Column({nullable: true})
     @IsString()
-    @IsNotEmpty()
+    @IsOptional()
     @MaxLength(100)
-    salary: string;
+    salary?: string;
 
     @Column("text", { array: true })
     @IsNotEmpty()
