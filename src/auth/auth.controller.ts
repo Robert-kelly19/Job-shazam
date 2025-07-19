@@ -8,7 +8,7 @@ export class AuthController {
 
   @Post("login-link")
   async requestLink(@Body() body: SendLoginDto) {
-    await this.authService.sendMagicLink(body.email);
+    await this.authService.sendMagicLink(body.email, body.name, body.techstack);
     return {message: "Login link sent to email"};
   }
 

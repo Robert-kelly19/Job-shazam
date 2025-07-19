@@ -12,9 +12,9 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async sendMagicLink(email: string) {
+  async sendMagicLink(email: string, name?: string, techstack?: string[]) {
     const token = uuidv4();
-    await this.userService.createOrUpdateToken(email, token);
+    await this.userService.createOrUpdateToken(email, token, name, techstack);
     const link = `http://localhost:8080/auth/verify?token=${token}`;
     await this.mailService.SendLogInMail(email, link);
   }

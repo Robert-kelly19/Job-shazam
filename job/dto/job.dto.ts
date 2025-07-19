@@ -82,7 +82,7 @@ export class DisplayJobsDto {
 
 export class FilterJobDto {
   @IsOptional()
-  @IsString({ each: true })
+  @IsString()
   location?: string;
 
   @IsOptional()

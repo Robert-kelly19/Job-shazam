@@ -52,15 +52,15 @@ async getFilterJobs(filterDto: FilterJobDto): Promise<Job[]> {
 
   const query = this.jobRepo.createQueryBuilder('job');
 
-  if (location?.length) {
-    query.andWhere('job.location && ARRAY[:...location]', { location });
+  if (location) {
+    query.andWhere('job.location = :location', { location });
   }
 
   if (salary) {
     query.andWhere('job.salary ILIKE :salary', { salary: `%${salary}%` });
   }
 
-  if (tags?.length) {
+  if (tags && tags?.length) {
     query.andWhere('job.tags && ARRAY[:...tags]', { tags });
   }
 
