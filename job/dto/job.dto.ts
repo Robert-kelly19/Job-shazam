@@ -1,5 +1,6 @@
 import { Transform } from "class-transformer";
-import {IsArray, IsDateString, IsNotEmpty,IsString,IsUrl,MaxLength,IsOptional} from "class-validator";
+import {IsArray,  IsNotEmpty,IsString,IsUrl,MaxLength,IsOptional, IsUUID} from "class-validator";
+
 
 
 export class GetJobsDto {
@@ -44,6 +45,7 @@ export class GetJobsDto {
 
 
 export class DisplayJobsDto {
+  @IsUUID()
   id: string;
   title: string;
   company: string;

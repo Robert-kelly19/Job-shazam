@@ -27,9 +27,9 @@ export class GetMailDto {
   @IsOptional()
   to: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
-  subject: string;
+  subject?: string;
 
   @IsNotEmpty()
   @IsString()

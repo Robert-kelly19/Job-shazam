@@ -3,7 +3,6 @@ import {
   Controller,
   Get,
   Param,
-  ParseIntPipe,
   Post,
   Query,
 } from '@nestjs/common';
@@ -32,7 +31,7 @@ export class JobController {
   }
 
   @Get(':id')
-  async findOne(@Param('id', ParseIntPipe) id: string): Promise<DisplayJobsDto | null> {
+  async findOne(@Param('id') id: string): Promise<DisplayJobsDto | null> {
     return this.jobService.findOne(id);
   }
 }

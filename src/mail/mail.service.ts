@@ -52,7 +52,7 @@ export class MailService {
       from: `"JobShazam"<${this.config.get<string>("MAIL_USER")}>`,
       to: `"JobShazam"<${this.config.get<string>("MAIL_USER")}>`,
       replyTo: dto.from,
-      subject: `New message from ${dto.from}: ${dto.subject}`,
+      subject: `New message from ${dto.from}`,
       text: `You got a message from ${dto.from}:\n\n${dto.text}`,
     };
     try {
