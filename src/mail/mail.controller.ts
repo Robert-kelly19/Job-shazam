@@ -17,11 +17,9 @@ export class MailController {
   async sendMail(@Query() SendMailDto: SendMailDto, @Res() res: Response) {
     try {
       await this.mailService.sendMail(SendMailDto);
-      return res
-        .status(200)
-        .json({
-          message: `Successfully subscribed. New job Updates will be sent to: ${SendMailDto.to}`,
-        });
+      return res.status(200).json({
+        message: `Successfully subscribed. New job Updates will be sent to: ${SendMailDto.to}`,
+      });
     } catch (error) {
       console.log(error);
       return res.status(500).json({message: `Something went wrong while subscribing.`});

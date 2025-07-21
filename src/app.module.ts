@@ -22,37 +22,22 @@ import {AuthModule} from "./auth/auth.module";
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => {
-        const databaseUrl = config.get<string>("DATABASE_URL");
-
-        if (databaseUrl) {
-          return {
-            type: "postgres",
-            url: databaseUrl,
-            autoLoadEntities: true,
-            ssl: {
-              rejectUnauthorized: false,
-            },
-            synchronize: config.get<string>("NODE_ENV") !== "production",
-          };
-        } else {
-          // Fallback to individual .env variables for local development
-          const requiredEnvs = ["DB_HOST", "DB_USER", "DB_PASSWORD", "DB_NAME", "DB_PORT"];
-          for (const envVar of requiredEnvs) {
-            if (!config.get(envVar)) {
-              throw new Error(`Missing environment variable for local DB setup: ${envVar}`);
-            }
+        const requiredEnvs = ["DB_HOST", "DB_USER", "DB_PASSWORD", "DB_NAME", "DB_PORT"];
+        for (const envVar of requiredEnvs) {
+          if (!config.get(envVar)) {
+            throw new Error(`Missing environment variable for local DB setup: ${envVar}`);
           }
-          return {
-            type: "postgres",
-            host: config.get<string>("DB_HOST"),
-            username: config.get<string>("DB_USER"),
-            password: config.get<string>("DB_PASSWORD"),
-            database: config.get<string>("DB_NAME"),
-            port: config.get<number>("DB_PORT"),
-            autoLoadEntities: true,
-            synchronize: config.get<string>("NODE_ENV") !== "production",
-          };
         }
+        return {
+          type: "postgres",
+          host: config.get<string>("DB_HOST"),
+          username: config.get<string>("DB_USER"),
+          password: config.get<string>("DB_PASSWORD"),
+          database: config.get<string>("DB_NAME"),
+          port: config.get<number>("DB_PORT"),
+          autoLoadEntities: true,
+          synchronize: config.get<string>("NODE_ENV") !== "production",
+        };
       },
     }),
     UserModule,
