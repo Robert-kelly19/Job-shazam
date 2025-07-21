@@ -1,7 +1,5 @@
-import { Transform } from "class-transformer";
-import {IsArray,  IsNotEmpty,IsString,IsUrl,MaxLength,IsOptional, IsUUID} from "class-validator";
-
-
+import {Transform} from "class-transformer";
+import {IsArray, IsNotEmpty, IsString, IsUrl, MaxLength, IsOptional, IsUUID} from "class-validator";
 
 export class GetJobsDto {
   @IsNotEmpty()
@@ -19,7 +17,6 @@ export class GetJobsDto {
   @MaxLength(1000)
   description?: string;
 
-
   @IsNotEmpty()
   @IsString()
   location: string;
@@ -27,14 +24,14 @@ export class GetJobsDto {
   @IsString()
   @IsOptional()
   salary?: string;
-  
+
   @IsArray()
-  @IsString({ each: true }) 
+  @IsString({each: true})
   tags?: string[];
 
   @IsNotEmpty()
   @IsUrl()
-  @MaxLength(255) 
+  @MaxLength(255)
   applyUrl: string;
 
   @IsNotEmpty()
@@ -42,7 +39,6 @@ export class GetJobsDto {
   @MaxLength(50)
   source: string;
 }
-
 
 export class DisplayJobsDto {
   @IsUUID()
@@ -72,10 +68,10 @@ export class DisplayJobsDto {
     this.id = job.id;
     this.title = job.title;
     this.company = job.company;
-    this.description = job.description
+    this.description = job.description;
     this.location = job.location;
     this.tags = job.tags;
-    this.salary = job.salary
+    this.salary = job.salary;
     this.postedAt = job.postedAt;
     this.applyUrl = job.applyUrl;
     this.source = job.source;
@@ -89,12 +85,12 @@ export class FilterJobDto {
 
   @IsOptional()
   @IsString()
-  @Transform(({ value }) => String(value))
+  @Transform(({value}) => String(value))
   salary?: string;
 
   @IsOptional()
-  @Transform(({ value }) => (Array.isArray(value) ? value : value.split(',')))
+  @Transform(({value}) => (Array.isArray(value) ? value : value.split(",")))
   @IsArray()
-  @IsString({ each: true })
+  @IsString({each: true})
   tags?: string[];
 }

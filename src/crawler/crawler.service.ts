@@ -20,6 +20,13 @@ interface SoftwareJob {
   source: string;
   description: string;
   type?: string;
+  aboutUs?: string;
+  roleOverview?: string;
+  responsibilities?: string[];
+  requirements?: string[];
+  whyJoinUs?: string[];
+  process?: string;
+  benefits?: string[];
 }
 
 enum JobSite {
@@ -92,95 +99,278 @@ export class CrawlerService implements OnModuleInit {
     }
   }
 
+  // --- Detail‐page parser helper ---
+  private parseJobDetails(html: string) {
+    const $ = cheerio.load(html);
+    const container = $(".html");
+
+    const getParagraphSection = (heading: string): string => {
+      const headEl = container.find(`p strong:contains("${heading}")`);
+      if (!headEl.length) return "Not Specified";
+      const text = headEl
+        .parent()
+        .clone()
+        .find("strong")
+        .remove()
+        .end()
+        .text()
+        .replace(/\s+/g, " ")
+        .trim();
+      return text || "Not Specified";
+    };
+
+    const getListSection = (heading: string): string[] => {
+      const headEl = container.find(`p strong:contains("${heading}")`);
+      if (!headEl.length) return ["Not Specified"];
+      const listEl = headEl.parent().next("ul");
+      if (!listEl.length) return ["Not Specified"];
+      const items = listEl
+        .find("li")
+        .map((_, li) => $(li).text().trim())
+        .get()
+        .filter((t) => t.length > 0);
+      return items.length ? items : ["Not Specified"];
+    };
+
+    // Extract structured fields
+    const aboutUs = getParagraphSection("About Us");
+    const roleOverview = getParagraphSection("Role Overview");
+    const process = getParagraphSection("About the Process");
+    const responsibilities = getListSection("What You’ll Do");
+    const requirements = getListSection("What We’re Looking For");
+    const whyJoinUs = getListSection("Why Join Us");
+
+    // Salary under its <h2>
+    let salary = container
+      .find('h2:contains("Salary and compensation")')
+      .nextUntil("h2, div")
+      .text()
+      .replace(/\s+/g, " ")
+      .trim();
+    if (!salary) salary = "Not Specified";
+
+    // Benefits paragraphs
+    let benefits = container
+      .find('h2:contains("Benefits")')
+      .nextAll("p")
+      .map((_, p) => $(p).text().trim())
+      .get()
+      .filter((t) => t.length > 0);
+    if (benefits.length === 0) benefits = ["Not Specified"];
+
+    return {
+      aboutUs,
+      roleOverview,
+      responsibilities,
+      requirements,
+      whyJoinUs,
+      process,
+      salary,
+      benefits,
+    };
+  }
+
+  // --- RemoteOK scraper with integrated detail parse ---
   private async scrapeRemoteOK(browser: Browser): Promise<SoftwareJob[]> {
     const page = await browser.newPage();
     const jobs: SoftwareJob[] = [];
-    try {
-      await page.goto("https://remoteok.com/remote-dev-jobs", {waitUntil: "domcontentloaded"});
-      const html = await page.content();
-      const $ = cheerio.load(html);
-      const jobRows = $("tr.job").toArray();
-      for (const el of jobRows) {
-        try {
-          const row = $(el);
-          // Fallback logic for title
-          const title =
-            row.find('h2[itemprop="title"]').text().trim() ||
-            row.find(".position_title, [class*=position], h3").first().text().trim();
-          if (!title) continue;
+
+    await page.goto("https://remoteok.com/remote-dev-jobs", {waitUntil: "networkidle2"});
+
+    // 1) Grab all listing-page data in one go
+    const listings = await page.evaluate(() => {
+      return Array.from(document.querySelectorAll("tr.job"))
+        .map((row: HTMLTableRowElement) => {
+          // Title & Company
+          const title = row.querySelector('h2[itemprop="title"]')?.textContent?.trim() ?? "";
           const company =
-            row.find('h3[itemprop="name"]').text().trim() ||
-            row.find(".company, [class*=company], h3").first().text().trim() ||
-            "Unknown";
+            row.querySelector('h3[itemprop="name"]')?.textContent?.trim() ?? "Unknown";
+          if (!title) return null;
+
+          // Salary — pick the first .location that has $, €, or £
           const salary =
-            row
-              .find("div.location")
-              .filter(function () {
-                return $(this).text().includes(":moneybag:");
-              })
-              .text()
-              .trim() || "Not Specified";
-          if (!salary) {
-            this.logger.warn(`No salary found for job: ${title}`);
+            Array.from(row.querySelectorAll("td.company .location"))
+              .map((el) => el.textContent ?? "")
+              .filter((txt) => /[$€£]/.test(txt))
+              .map((txt) => txt.replace(/^[^\d$€£]+|[^\d\-–$€£ ]+$/g, "").trim())[0] ||
+            "Not Specified";
+
+          // Tags — only the <h3> text, collapse whitespace
+          const tags = Array.from(row.querySelectorAll("td.tags .tag h3"))
+            .map((el) => el.textContent?.replace(/\s+/g, " ").trim() ?? "")
+            .filter(Boolean)
+            // dedupe
+            .filter((v, i, a) => a.indexOf(v) === i);
+
+          // Apply URL
+          let applyUrl = row.getAttribute("data-url") ?? "";
+          if (!applyUrl.startsWith("http")) {
+            applyUrl = "https://remoteok.com" + applyUrl;
           }
-          const tags = row
-            .find(".tags .tag, [class*=tag]")
-            .map((i, tag) => $(tag).text().trim())
-            .get();
-          const applyUrl = "https://remoteok.com" + row.attr("data-url");
-          // Scrape job description from detail page
-          let description = "";
-          if (applyUrl) {
-            const detailPage = await browser.newPage();
-            try {
-              await detailPage.goto(applyUrl, {waitUntil: "domcontentloaded"});
-              const detailHtml = await detailPage.content();
-              const $$ = cheerio.load(detailHtml);
-              // Robust description selector fallback logic
-              const paragraphs = $$(".show-right p")
-                .slice(0, 3)
-                .map(function () {
-                  return $$(this).text().trim();
-                })
-                .get();
-              if (paragraphs.length > 0) {
-                description = paragraphs.join("\n\n");
-              } else {
-                // Fallback robust description selector logic
-                description =
-                  $$(".description").text().trim() ||
-                  $$("[class*=description]").text().trim() ||
-                  $$("div[itemprop='description']").text().trim() ||
-                  "Apply on the job link for full description.";
-              }
-            } catch (descErr) {
-              description = "Failed to scrape description.";
-              this.logger.warn(`Description scrape failed for ${title}: ${descErr.message}`);
-            } finally {
-              await detailPage.close();
-            }
+
+          return {title, company, salary, tags, applyUrl};
+        })
+        .filter((x) => x !== null);
+    });
+
+    // Loop detail pages to scrape the first three p under .html
+    for (const job of listings as Array<{
+      title: string;
+      company: string;
+      salary: string;
+      tags: string[];
+      applyUrl: string;
+    }>) {
+      // default fallbacks
+      let aboutUs = "Not Specified";
+      let roleOverview = "Not Specified";
+      let responsibilities = ["Not Specified"];
+      let requirements = ["Not Specified"];
+      let whyJoinUs = ["Not Specified"];
+      let process = "Not Specified";
+      let detailSalary = job.salary; // listing fallback
+      let benefits = ["Not Specified"];
+      let description = "Apply on the job link for full description.";
+
+      try {
+        const detailPage = await browser.newPage();
+        await detailPage.goto(job.applyUrl, {waitUntil: "networkidle2"});
+
+        const data = await detailPage.evaluate(() => {
+          const container = document.querySelector("div.html");
+          if (!container) return null;
+
+          // strip heading text from its paragraph
+          function stripHeading(p: HTMLParagraphElement, heading: string) {
+            return (
+              (p.textContent || "").replace(heading, "").replace(/\s+/g, " ").trim() ||
+              "Not Specified"
+            );
           }
-          jobs.push({
-            title,
-            company,
-            location: "Remote",
-            salary,
-            tags,
-            applyUrl,
-            source: "RemoteOK",
-            description,
-            type: "Remote",
+
+          // find a p.p1 with strong then grab its text minus the bold
+          const paras = Array.from(container.querySelectorAll("p.p1"));
+          let about = "Not Specified";
+          let role = "Not Specified";
+          let proc = "Not Specified";
+
+          paras.forEach((p) => {
+            const s = p.querySelector("strong")?.textContent || "";
+            if (s.includes("About Us")) about = stripHeading(p as HTMLParagraphElement, s);
+            else if (s.includes("Role Overview")) role = stripHeading(p as HTMLParagraphElement, s);
+            else if (s.includes("About the Process"))
+              proc = stripHeading(p as HTMLParagraphElement, s);
           });
-          // Random delay to reduce bot detection
-          await new Promise((res) => setTimeout(res, Math.random() * 500 + 300));
-        } catch (jobErr) {
-          this.logger.warn(`Failed to scrape one job listing: ${jobErr.message}`);
+
+          // helper to read the <ul> immediately after a heading <p>
+          function listAfter(label: string): string[] {
+            const p = paras.find((x) =>
+              (x.querySelector("strong")?.textContent || "").includes(label),
+            );
+            if (!p) return ["Not Specified"];
+            const ul = p.nextElementSibling;
+            if (!(ul instanceof HTMLUListElement)) return ["Not Specified"];
+            const items = Array.from(ul.querySelectorAll("li"))
+              .map((li) => li.textContent?.trim() || "")
+              .filter((t) => !!t);
+            return items.length ? items : ["Not Specified"];
+          }
+
+          const resp = listAfter("What You’ll Do");
+          const reqs = listAfter("What We’re Looking For");
+          const why = listAfter("Why Join Us");
+
+          // Salary under its <h2>
+          let sal = "Not Specified";
+          const h2s = Array.from(container.querySelectorAll("h2"));
+          const salH2 = h2s.find((h) => h.textContent?.includes("Salary and compensation"));
+          if (salH2) {
+            let txt = "";
+            let el = salH2.nextElementSibling;
+            while (el && el.tagName !== "H2") {
+              txt += el.textContent || "";
+              el = el.nextElementSibling;
+            }
+            sal = txt.replace(/\s+/g, " ").trim() || "Not Specified";
+          }
+
+          // Benefits paragraphs
+          let ben: string[] = ["Not Specified"];
+          const benH2 = h2s.find((h) => h.textContent?.includes("Benefits"));
+          if (benH2) {
+            const items: string[] = [];
+            let el = benH2.nextElementSibling;
+            while (el && el.tagName === "P") {
+              const t = (el.textContent || "").trim();
+              if (t) items.push(t);
+              el = el.nextElementSibling;
+            }
+            if (items.length) ben = items;
+          }
+
+          // build a short description: first 3 paragraphs
+          const descParas = Array.from(container.querySelectorAll("p"))
+            .slice(0, 3)
+            .map((p) => (p.textContent || "").replace(/\s+/g, " ").trim())
+            .filter((t) => !!t);
+          const desc = descParas.length
+            ? descParas.join("\n\n")
+            : "Apply on the job link for full description.";
+
+          return {
+            aboutUs: about,
+            roleOverview: role,
+            responsibilities: resp,
+            requirements: reqs,
+            whyJoinUs: why,
+            process: proc,
+            salary: sal,
+            benefits: ben,
+            description: desc,
+          };
+        });
+
+        await detailPage.close();
+
+        if (data) {
+          aboutUs = data.aboutUs;
+          roleOverview = data.roleOverview;
+          responsibilities = data.responsibilities;
+          requirements = data.requirements;
+          whyJoinUs = data.whyJoinUs;
+          process = data.process;
+          detailSalary = data.salary || job.salary;
+          benefits = data.benefits;
+          description = data.description;
         }
+      } catch (err) {
+        this.logger.warn(`Detail parse failed for ${job.title}: ${err.message}`);
       }
-      return jobs;
-    } finally {
-      await page.close();
+
+      jobs.push({
+        title: job.title,
+        company: job.company,
+        location: "Remote",
+        salary: detailSalary,
+        tags: job.tags,
+        applyUrl: job.applyUrl,
+        source: "RemoteOK",
+        description, // clean plaintext
+        type: "Remote",
+        aboutUs, // structured fields
+        roleOverview,
+        responsibilities,
+        requirements,
+        whyJoinUs,
+        process,
+        benefits,
+      });
+
+      await new Promise((r) => setTimeout(r, Math.random() * 500 + 300));
     }
+
+    await page.close();
+    return jobs;
   }
 
   private async scrapeWeWorkRemotely(browser: Browser): Promise<SoftwareJob[]> {
