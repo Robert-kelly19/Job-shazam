@@ -1,7 +1,7 @@
 import {CreateDateColumn, Entity,PrimaryGeneratedColumn,ManyToOne, Column,} from "typeorm";
 import { User } from "../user/user.entity";
 import { Job } from "../job/job.entity";
-@Entity()
+@Entity('savedjob')
 export class SavedJob{
     @PrimaryGeneratedColumn('uuid')
   id: string;
