@@ -1,4 +1,17 @@
 {
   "extends": "./tsconfig.json",
-  "exclude": ["node_modules", "test", "dist", "**/*spec.ts"]
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./"
+  },
+  "include": [
+    "src/**/*",
+    "job/**/*",
+    "saved-job/**/*",
+    "user/**/*",
+    "auth/**/*",
+    "crawler/**/*",
+    "mail/**/*"
+  ],
+  "exclude": ["node_modules", "test", "dist", "**/*.spec.ts"]
 }
