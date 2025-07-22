@@ -10,6 +10,9 @@ import {ScheduleModule} from "@nestjs/schedule";
 import {CrawlerModule} from "./crawler/crawler.module";
 import {MailModule} from "./mail/mail.module";
 import {AuthModule} from "./auth/auth.module";
+import {User} from "user/user.entity";
+import {SavedJob} from "saved-job/saved-job.entity";
+import {Job} from "job/job.entity";
 
 @Module({
   imports: [
@@ -36,6 +39,7 @@ import {AuthModule} from "./auth/auth.module";
           database: config.get<string>("DB_NAME"),
           port: config.get<number>("DB_PORT"),
           autoLoadEntities: true,
+          entities: [User, SavedJob, Job],
           synchronize: config.get<string>("NODE_ENV") !== "production",
         };
       },
