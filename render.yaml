@@ -1,10 +1,9 @@
 services:
   - type: web
-    name: job-crawler
-    runtime: node
-    plan: free
-    buildCommand: npm install && npm run build
-    startCommand: node dist/main.js
+    name: job-shazam-backend
+    env: node
+    buildCommand: npm install --include=dev && npm run build
+    startCommand: npm run start:prod
     envVars:
       - key: NODE_ENV
         value: production
