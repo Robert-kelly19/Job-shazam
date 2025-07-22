@@ -4,7 +4,7 @@ import { Type} from "class-transformer";
 import { User } from "user/user.entity";
 import { SavedJob } from "saved-job/saved-job.entity";
 
-@Entity('job')
+@Entity('jobs')
 export class Job {
     @PrimaryGeneratedColumn('uuid')
     id: string;
