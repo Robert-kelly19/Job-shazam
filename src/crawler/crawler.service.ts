@@ -1,5 +1,5 @@
 import {Injectable, Logger, OnModuleInit} from "@nestjs/common";
-import {JobService} from "job/job.service";
+import {JobService} from "../../job/job.service";
 import puppeteer from "puppeteer-extra";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
 import {config} from "dotenv";

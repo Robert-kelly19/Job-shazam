@@ -1,7 +1,7 @@
 import {Injectable, UnauthorizedException} from "@nestjs/common";
 import {v4 as uuidv4} from "uuid";
-import {UserService} from "user/user.service";
-import {MailService} from "src/mail/mail.service";
+import {UserService} from "../../user/user.service";
+import {MailService} from "mail/mail.service";
 import {JwtService} from "@nestjs/jwt";
 
 @Injectable()

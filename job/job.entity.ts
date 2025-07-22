@@ -1,8 +1,8 @@
 import { Column, CreateDateColumn, Entity,ManyToOne,OneToMany,PrimaryGeneratedColumn,} from "typeorm";
 import { IsNotEmpty,IsString,MaxLength,IsUrl, IsArray, IsOptional} from "class-validator";
 import { Type} from "class-transformer";
-import { User } from "user/user.entity";
-import { SavedJob } from "saved-job/saved-job.entity";
+import { User } from "../user/user.entity";
+import { SavedJob } from "../saved-job/saved-job.entity";
 
 @Entity('jobs')
 export class Job {
