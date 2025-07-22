@@ -3,7 +3,7 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { SavedJob } from "./saved-job.entity";
 import { SavedJobController } from "./saved-job.controller";
 import { SavedJobService } from "./saved-job.service";
-import { JwtStrategy } from "auth/jwt.strategy";
+import { JwtStrategy } from "src/auth/jwt.strategy";
 
 
 @Module({
