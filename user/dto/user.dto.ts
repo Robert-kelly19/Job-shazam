@@ -11,6 +11,9 @@ export class SendLoginDto{
     @IsOptional()
     techstack?: string[];
 
+    @IsOptional()
+    cv?: Buffer;
+
     @IsEmail()
     @IsNotEmpty()
     @IsString()

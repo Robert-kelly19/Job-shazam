@@ -41,6 +41,17 @@ export class User {
   @IsNotEmpty()
   email: string;
 
+  @Column({type: 'bytea', nullable:true})
+  @IsOptional()
+  cv?: Buffer;
+
+  @Column({nullable:true})
+  cvfilename: string;
+
+  @Column({nullable:true})
+  @IsOptional()
+  doctype: string;
+
   @Column()
   @IsUUID()
   @IsNotEmpty()
