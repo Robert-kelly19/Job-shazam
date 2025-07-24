@@ -24,11 +24,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "pre-commit": "lint-staged",
     "prepare": "husky install",
-    "postinstall": "npx puppeteer install chrome",
-    "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js",
-    "migration:generate": "npm run typeorm -- migration:generate src/migrations/NewMigration -d data-source.ts",
-    "migration:run": "npm run typeorm -- migration:run -d data-source.ts",
-    "migration:revert": "npm run typeorm -- migration:revert -d data-source.ts"
+    "postinstall": "npx puppeteer install chrome"
   },
 
   "dependencies": {
