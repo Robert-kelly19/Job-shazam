@@ -20,7 +20,7 @@ import { SavedJob } from 'saved-job/saved-job.entity';
 import { Job } from '../job/job.entity';
 import { Type } from 'class-transformer';
 
-@Entity('users')
+@Entity('user')
 export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
