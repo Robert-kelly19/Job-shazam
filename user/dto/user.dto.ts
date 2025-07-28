@@ -11,12 +11,9 @@ export class SendLoginDto{
     @IsOptional()
     techstack?: string[];
 
-    @IsOptional()
-    cv?: Buffer;
-
     @IsEmail()
-    @IsNotEmpty()
     @IsString()
+    @IsNotEmpty()
     email: string;
 }
 
@@ -37,3 +34,7 @@ export class getUserDto {
 
     used: boolean;
 }
+
+
+
+

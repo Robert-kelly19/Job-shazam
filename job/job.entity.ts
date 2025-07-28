@@ -21,15 +21,23 @@ export class Job {
     @MaxLength(200)
     company: string;
 
-    @Column({nullable: true})
-    @IsOptional()
+    // @Column('text',{nullable: true, array: true})
+    @Column({nullable:true})
     @IsString()
+    @IsOptional()
+    // @IsArray()
+    // @Type(()=>String)
     description?: string;
 
     @Column()
     @IsNotEmpty()
     @IsString()
     location: string;
+
+    @Column({nullable:true})
+    @IsOptional()
+    @IsString()
+    companyLogo?: string;
 
     @Column({nullable: true})
     @IsString()

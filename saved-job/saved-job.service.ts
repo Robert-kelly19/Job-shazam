@@ -13,7 +13,7 @@ export class SavedJobService {
 
  async CreateSavedJob(dto: savedJobDto & { user: string }): Promise<SavedJob> {
   const newSavedJob = this.savedJobRepo.create({
-    user: { id: dto.user }, // nested relation
+    user: { id: dto.user }, 
     job: { id: dto.job },
     status: dto.status,
   });

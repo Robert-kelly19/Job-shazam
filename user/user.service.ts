@@ -1,8 +1,7 @@
-import { Injectable} from '@nestjs/common';
+import { Injectable, NotFoundException} from '@nestjs/common';
 import { InjectRepository} from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './user.entity';
-
  
 @Injectable()
 export class UserService { 
@@ -39,4 +38,13 @@ export class UserService {
   async markUsedToken(userId:string){
     await this.repo.update(userId, {used: true});
   }
+
+  async uploadCv (email:string,file: Express.Multer.File): Promise<User>{
+   const user = await this.findByEmail(email);
+   if(!user){
+    throw new NotFoundException('user not found. Signin to upload cv')
+   }
+   user.cv = file.path;
+   return this.repo.save(user)
+}
 }

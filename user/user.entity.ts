@@ -36,23 +36,19 @@ export class User {
   @Type(() => String )
   techstack?:string[];
 
-  @Column({ unique: true })
-  @IsEmail()
+  @Column({ unique: true})
   @IsNotEmpty()
-  email: string;
+  @IsEmail()
+  email?: string;
 
-  @Column({type: 'bytea', nullable:true})
-  @IsOptional()
-  cv?: Buffer;
-
-  @Column({nullable:true})
-  cvfilename: string;
-
+ 
   @Column({nullable:true})
   @IsOptional()
-  doctype: string;
+  cv?: string;
 
-  @Column()
+  
+
+  @Column({nullable:true})
   @IsUUID()
   @IsNotEmpty()
   @IsString()
