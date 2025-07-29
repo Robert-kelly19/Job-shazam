@@ -13,6 +13,7 @@ import {AuthModule} from "./auth/auth.module";
 import {User} from "user/user.entity";
 import {SavedJob} from "saved-job/saved-job.entity";
 import {Job} from "job/job.entity";
+import {MatchModule} from "./match/match.module";
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import {Job} from "job/job.entity";
     JobModule,
     MailModule,
     AuthModule,
+    MatchModule,
   ],
   controllers: [AppController],
   providers: [AppService],

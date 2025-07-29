@@ -102,3 +102,12 @@ export class FilterJobDto {
   @IsString({each: true})
   tags?: string[];
 }
+
+export class matchDto {
+
+
+  description: string;
+
+
+  cv:string;
+}

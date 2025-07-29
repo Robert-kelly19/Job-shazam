@@ -23,7 +23,6 @@ export class Job {
 
     // @Column('text',{nullable: true, array: true})
     @Column({nullable:true})
-    @IsString()
     @IsOptional()
     // @IsArray()
     // @Type(()=>String)
