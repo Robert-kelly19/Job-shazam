@@ -58,7 +58,7 @@ RUN apt-get update && apt-get install -y \
 COPY package*.json ./
 ENV NODE_ENV=production
 ENV NPM_CONFIG_IGNORE_SCRIPTS=true
-RUN npm ci --only=production
+RUN npm install --omit=dev
 
 # 5. Copy compiled NestJS app from builder
 COPY --from=builder /usr/src/app/dist ./dist

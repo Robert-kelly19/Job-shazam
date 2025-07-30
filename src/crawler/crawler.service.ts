@@ -3,30 +3,44 @@ import {JobService} from "../../job/job.service";
 import puppeteer from "puppeteer-extra";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
 import {config} from "dotenv";
-import {Browser} from "puppeteer";
+import {Browser, Page} from "puppeteer";
 import * as cheerio from "cheerio";
 
 config();
 
 puppeteer.use(StealthPlugin());
 
+interface JobDescription {
+  aboutUs: string;
+  roleOverview: string;
+  responsibilities: string[];
+  requirements: {
+    mustHave: string[];
+    niceToHave: string[];
+  };
+  whyJoinUs: string[];
+  process: string[];
+  benefits: {
+    health: string[];
+    financial: string[];
+    timeOff: string[];
+    learning: string[];
+    other: string[];
+  };
+}
+
 interface SoftwareJob {
   title: string;
   company: string;
+  companyLogo?: string;
   location: string;
-  salary?: string;
+  salary: string;
   tags: string[];
   applyUrl: string;
   source: string;
+  type: string;
   description: string;
-  type?: string;
-  aboutUs?: string;
-  roleOverview?: string;
-  responsibilities?: string[];
-  requirements?: string[];
-  whyJoinUs?: string[];
-  process?: string;
-  benefits?: string[];
+  detailed?: JobDescription;
 }
 
 enum JobSite {
@@ -91,7 +105,11 @@ export class CrawlerService implements OnModuleInit {
 
       this.logger.log(`Discovered ${jobs.length} jobs from ${site}.`);
       for (const job of jobs) {
-        await this.jobService.create(job);
+        try {
+          await this.jobService.create(job);
+        } catch (e) {
+          this.logger.error(`Failed to create job ${job.title}: ${e.message}`);
+        }
       }
       this.logger.log(`Finished processing jobs for ${site}.`);
     } catch (error) {
@@ -99,311 +117,160 @@ export class CrawlerService implements OnModuleInit {
     }
   }
 
-  // --- RemoteOK scraper with integrated detail parse ---
-  private async scrapeRemoteOK(browser: Browser): Promise<SoftwareJob[]> {
-    const page = await browser.newPage();
-    const jobs: SoftwareJob[] = [];
-
-    await page.goto("https://remoteok.com/remote-dev-jobs", {waitUntil: "networkidle2"});
-
-    // 1) Grab all listing-page data in one go
-    const listings = await page.evaluate(() => {
-      return Array.from(document.querySelectorAll("tr.job"))
-        .map((row: HTMLTableRowElement) => {
-          // Title & Company
-          const title = row.querySelector('h2[itemprop="title"]')?.textContent?.trim() ?? "";
-          const company =
-            row.querySelector('h3[itemprop="name"]')?.textContent?.trim() ?? "Unknown";
-          if (!title) return null;
-
-          // Salary — pick the first .location that has $, €, or £
-          const salary =
-            Array.from(row.querySelectorAll("td.company .location"))
-              .map((el) => el.textContent ?? "")
-              .filter((txt) => /[$€£]/.test(txt))
-              .map((txt) => txt.replace(/^[^\d$€£]+|[^\d\-–$€£ ]+$/g, "").trim())[0] ||
-            "Not Specified";
-
-          // Tags — only the <h3> text, collapse whitespace
-          const tags = Array.from(row.querySelectorAll("td.tags .tag h3"))
-            .map((el) => el.textContent?.replace(/\s+/g, " ").trim() ?? "")
-            .filter(Boolean)
-            // dedupe
-            .filter((v, i, a) => a.indexOf(v) === i);
-
-          // Apply URL
-          let applyUrl = row.getAttribute("data-url") ?? "";
-          if (!applyUrl.startsWith("http")) {
-            applyUrl = "https://remoteok.com" + applyUrl;
-          }
-
-          return {title, company, salary, tags, applyUrl};
-        })
-        .filter((x) => x !== null);
-    });
-
-    // Loop detail pages to scrape the first three p under .html
-    for (const job of listings as Array<{
-      title: string;
-      company: string;
-      salary: string;
-      tags: string[];
-      applyUrl: string;
-    }>) {
-      // default fallbacks
-      let aboutUs = "Not Specified";
-      let roleOverview = "Not Specified";
-      let responsibilities = ["Not Specified"];
-      let requirements = ["Not Specified"];
-      let whyJoinUs = ["Not Specified"];
-      let process = "Not Specified";
-      let detailSalary = job.salary; // listing fallback
-      let benefits = ["Not Specified"];
-      let description = "Apply on the job link for full description.";
-
-      try {
-        const detailPage = await browser.newPage();
-        await detailPage.goto(job.applyUrl, {waitUntil: "networkidle2"});
-
-        const data = await detailPage.evaluate(() => {
-          const container = document.querySelector("div.html");
-          if (!container) return null;
-
-          // strip heading text from its paragraph
-          function stripHeading(p: HTMLParagraphElement, heading: string) {
-            return (
-              (p.textContent || "").replace(heading, "").replace(/\s+/g, " ").trim() ||
-              "Not Specified"
-            );
-          }
-
-          // find a p.p1 with strong then grab its text minus the bold
-          const paras = Array.from(container.querySelectorAll("p.p1"));
-          let about = "Not Specified";
-          let role = "Not Specified";
-          let proc = "Not Specified";
-
-          paras.forEach((p) => {
-            const s = p.querySelector("strong")?.textContent || "";
-            if (s.includes("About Us")) about = stripHeading(p as HTMLParagraphElement, s);
-            else if (s.includes("Role Overview")) role = stripHeading(p as HTMLParagraphElement, s);
-            else if (s.includes("About the Process"))
-              proc = stripHeading(p as HTMLParagraphElement, s);
-          });
-
-          // helper to read the <ul> immediately after a heading <p>
-          function listAfter(label: string): string[] {
-            const p = paras.find((x) =>
-              (x.querySelector("strong")?.textContent || "").includes(label),
-            );
-            if (!p) return ["Not Specified"];
-            const ul = p.nextElementSibling;
-            if (!(ul instanceof HTMLUListElement)) return ["Not Specified"];
-            const items = Array.from(ul.querySelectorAll("li"))
-              .map((li) => li.textContent?.trim() || "")
-              .filter((t) => !!t);
-            return items.length ? items : ["Not Specified"];
-          }
-
-          const resp = listAfter("What You’ll Do");
-          const reqs = listAfter("What We’re Looking For");
-          const why = listAfter("Why Join Us");
-
-          // Salary under its <h2>
-          let sal = "Not Specified";
-          const h2s = Array.from(container.querySelectorAll("h2"));
-          const salH2 = h2s.find((h) => h.textContent?.includes("Salary and compensation"));
-          if (salH2) {
-            let txt = "";
-            let el = salH2.nextElementSibling;
-            while (el && el.tagName !== "H2") {
-              txt += el.textContent || "";
-              el = el.nextElementSibling;
-            }
-            sal = txt.replace(/\s+/g, " ").trim() || "Not Specified";
-          }
-
-          // Benefits paragraphs
-          let ben: string[] = ["Not Specified"];
-          const benH2 = h2s.find((h) => h.textContent?.includes("Benefits"));
-          if (benH2) {
-            const items: string[] = [];
-            let el = benH2.nextElementSibling;
-            while (el && el.tagName === "P") {
-              const t = (el.textContent || "").trim();
-              if (t) items.push(t);
-              el = el.nextElementSibling;
-            }
-            if (items.length) ben = items;
-          }
-
-          // build a short description: first 3 paragraphs
-          const descParas = Array.from(container.querySelectorAll("p"))
-            .slice(0, 3)
-            .map((p) => (p.textContent || "").replace(/\s+/g, " ").trim())
-            .filter((t) => !!t);
-          const desc = descParas.length
-            ? descParas.join("\n\n")
-            : "Apply on the job link for full description.";
-
-          return {
-            aboutUs: about,
-            roleOverview: role,
-            responsibilities: resp,
-            requirements: reqs,
-            whyJoinUs: why,
-            process: proc,
-            salary: sal,
-            benefits: ben,
-            description: desc,
-          };
-        });
-
-        await detailPage.close();
-
-        if (data) {
-          aboutUs = data.aboutUs;
-          roleOverview = data.roleOverview;
-          responsibilities = data.responsibilities;
-          requirements = data.requirements;
-          whyJoinUs = data.whyJoinUs;
-          process = data.process;
-          detailSalary = data.salary || job.salary;
-          benefits = data.benefits;
-          description = data.description;
-        }
-      } catch (err) {
-        this.logger.warn(`Detail parse failed for ${job.title}: ${err.message}`);
-      }
-
-      jobs.push({
-        title: job.title,
-        company: job.company,
-        location: "Remote",
-        salary: detailSalary,
-        tags: job.tags,
-        applyUrl: job.applyUrl,
-        source: "RemoteOK",
-        description, // clean plaintext
-        type: "Remote",
-        aboutUs, // structured fields
-        roleOverview,
-        responsibilities,
-        requirements,
-        whyJoinUs,
-        process,
-        benefits,
-      });
-
-      await new Promise((r) => setTimeout(r, Math.random() * 500 + 300));
-    }
-
-    await page.close();
-    return jobs;
+  private cleanText(input: string): string {
+    return input
+      .replace(/\n|\t/g, " ")
+      .replace(/\s+/g, " ")
+      .replace(/^\s+|\s+$/g, "")
+      .replace(/\\+/g, "");
   }
 
-  private async scrapeWeWorkRemotely(browser: Browser): Promise<SoftwareJob[]> {
-    const page = await browser.newPage();
+  private async scrapeRemoteOK(browser: Browser): Promise<SoftwareJob[]> {
+    const logger = new Logger("RemoteOK");
     const jobs: SoftwareJob[] = [];
 
     try {
-      await page.goto("https://weworkremotely.com/categories/remote-programming-jobs", {
-        waitUntil: "domcontentloaded",
+      const page = await browser.newPage();
+      await page.goto("https://remoteok.com/remote-dev+software-jobs", {
+        waitUntil: "networkidle2",
       });
 
       const html = await page.content();
       const $ = cheerio.load(html);
+      const rows = $("tr.job");
+      const detailPage = await browser.newPage();
 
-      const listings = $("li.new-listing-container").toArray();
+      for (let i = 0; i < rows.length; i++) {
+        const row = $(rows[i]);
 
-      for (const el of listings) {
         try {
-          const listing = $(el);
+          const title = this.cleanText(row.find('h2[itemprop="title"]').text());
+          const company = this.cleanText(row.find('h3[itemprop="name"]').text());
+          const companyLogo = row.find("td.has-logo img").attr("src") || "";
 
-          const title =
-            listing.find("h4.new-listing__header__title").text().trim() ||
-            listing.find("span.title").text().trim() ||
-            "No title";
+          const locations = row
+            .find(".location")
+            .map((_, loc) => this.cleanText($(loc).text()))
+            .get();
+          const location = locations.find((l) => !l.includes("$")) || "Remote";
+          const salary = locations.find((l) => l.includes("$")) || "";
 
-          const company =
-            listing.find("p.new-listing__company-name").text().trim() ||
-            listing.find("span.company").text().trim() ||
-            "No company";
-
-          const location =
-            listing.find("p.new-listing__company-headquarters").text().trim() || "Remote";
-
-          const relativeUrl = listing.find("a").attr("href") || "";
-          const applyUrl = relativeUrl.startsWith("http")
-            ? relativeUrl
-            : "https://weworkremotely.com" + relativeUrl;
-
-          const tags = listing
-            .find(".new-listing__categories__category")
-            .map((i, tag) => $(tag).text().trim())
+          const tags = row
+            .find("td.tags h3")
+            .map((_, tag) => this.cleanText($(tag).text()))
             .get();
 
-          const salary =
-            listing
-              .find(".new-listing__categories__category")
-              .filter(function () {
-                return $(this).text().includes("$");
-              })
-              .first()
-              .text()
-              .trim() || "Not Specified";
+          const applyUrl = "https://remoteok.com" + row.attr("data-href");
+          const source = "RemoteOK";
 
-          //  Random delay to reduce bot detection
-          await new Promise((res) => setTimeout(res, Math.random() * 1500 + 500));
+          const detailed = await this.extractJobDetails(applyUrl, detailPage);
 
-          // Fetch job detail page for real description
-          let description = "";
-          const detailPage = await browser.newPage();
+          if (title && company && applyUrl) {
+            const job: SoftwareJob = {
+              title,
+              company,
+              companyLogo,
+              location,
+              salary,
+              tags,
+              applyUrl,
+              source,
+              description: detailed?.roleOverview || title,
+              detailed,
+              type: "Full-time",
+            };
 
-          try {
-            await detailPage.goto(applyUrl, {waitUntil: "domcontentloaded"});
-            const detailHtml = await detailPage.content();
-            const $$ = cheerio.load(detailHtml);
-
-            // Fallback selector logic for description
-            description =
-              $$(".listing-container").text().trim() ||
-              $$("section#job-listing").text().trim() ||
-              $$("body").text().trim() ||
-              "No description available.";
-          } catch (descErr) {
-            this.logger.warn(`Failed to scrape description for ${title}: ${descErr.message}`);
-            description = "Description scrape failed.";
-          } finally {
-            await detailPage.close();
+            jobs.push(job);
           }
-
-          jobs.push({
-            title,
-            company,
-            location,
-            salary,
-            description,
-            applyUrl,
-            tags,
-            source: "WeWorkRemotely",
-            type: "Remote",
-          });
-        } catch (jobErr) {
-          this.logger.warn(`Failed to scrape a job on WWR: ${jobErr.message}`);
-          continue;
+        } catch (rowError) {
+          logger.warn(`Failed to process job row ${i + 1}: ${rowError}`);
         }
       }
 
-      return jobs;
+      await detailPage.close();
+      logger.log(`Scraped ${jobs.length} jobs from RemoteOK.`);
+      if (jobs.length === 0) logger.warn("No jobs found on RemoteOK.");
+
+      if (jobs.length > 0) {
+        logger.log(`Inserting ${jobs.length} jobs into the database.`);
+      }
     } catch (err) {
-      this.logger.error(`Failed to scrape WeWorkRemotely: ${err.message}`);
-      return jobs;
+      logger.error("Error in scraping RemoteOK:", err.message);
+      logger.debug(err.stack);
     } finally {
-      await page.close();
+      logger.log("RemoteOK job scraping completed.");
     }
+
+    return jobs;
   }
 
+  private async extractJobDetails(url: string, page: Page): Promise<JobDescription> {
+    const description: JobDescription = {
+      aboutUs: "",
+      roleOverview: "",
+      responsibilities: [],
+      requirements: {
+        mustHave: [],
+        niceToHave: [],
+      },
+      whyJoinUs: [],
+      process: [],
+      benefits: {
+        health: [],
+        financial: [],
+        timeOff: [],
+        learning: [],
+        other: [],
+      },
+    };
+
+    try {
+      await page.goto(url, {waitUntil: "networkidle2"});
+      const html = await page.content();
+      const $ = cheerio.load(html);
+      const markdown = $(".markdown").text();
+
+      if (!markdown) return description;
+
+      const text = this.cleanText(markdown);
+
+      const extractList = (label: string) => {
+        const pattern = new RegExp(`${label}:?\\s*(.*?)((?:[A-Z][a-z]+:)|$)`, "si");
+        const match = text.match(pattern);
+        return match
+          ? match?.[1]
+              .split(/[\n\-•]+/)
+              .map(this.cleanText)
+              .filter(Boolean)
+          : [];
+      };
+
+      description.aboutUs = extractList("About")[0] || "";
+      description.roleOverview = text.split("\n")[0];
+      description.responsibilities = extractList("Responsibilities");
+      description.requirements.mustHave = extractList("Must Have");
+      description.requirements.niceToHave = extractList("Nice to Have");
+      description.whyJoinUs = extractList("Why Join Us");
+      description.process = extractList("Interview Process");
+
+      const benefitsList = extractList("Benefits");
+      for (const benefit of benefitsList) {
+        if (/health|insurance/i.test(benefit)) description.benefits.health.push(benefit);
+        else if (/401k|retirement|equity|bonus/i.test(benefit))
+          description.benefits.financial.push(benefit);
+        else if (/vacation|leave|pto/i.test(benefit)) description.benefits.timeOff.push(benefit);
+        else if (/learning|course|training/i.test(benefit))
+          description.benefits.learning.push(benefit);
+        else description.benefits.other.push(benefit);
+      }
+    } catch (err) {
+      console.error(`Error extracting job details from ${url}:`, err.message);
+    }
+
+    return description;
+  }
+
+  // scrapeRemoteCo and scrapeWeWorkRemotely remain unchanged.
   private async scrapeRemoteCo(browser: Browser): Promise<SoftwareJob[]> {
     const page = await browser.newPage();
     const jobs: SoftwareJob[] = [];
@@ -419,22 +286,20 @@ export class CrawlerService implements OnModuleInit {
         try {
           const listing = $(el);
 
-          // Extract job title with fallback
-          const title =
+          const title = this.cleanText(
             listing.find("a.sc-hLtSKV").text().trim() ||
-            listing.find("a").first().text().trim() ||
-            "No title";
+              listing.find("a").first().text().trim() ||
+              "No title",
+          );
 
-          // Extract company name with fallback
-          const company =
+          const company = this.cleanText(
             listing.find("h3.sc-igdSGC").text().trim() ||
-            listing.find("h3").first().text().trim() ||
-            "No company";
+              listing.find("h3").first().text().trim() ||
+              "No company",
+          );
 
-          // Extract location
-          const location = listing.find("span.sc-cXghZX").text().trim() || "Remote";
+          const location = this.cleanText(listing.find("span.sc-cXghZX").text().trim() || "Remote");
 
-          // Extract salary if available in tags
           const tags = listing
             .find("ul.sc-gVcvut li")
             .map((i, tag) => $(tag).text().trim())
@@ -442,23 +307,15 @@ export class CrawlerService implements OnModuleInit {
 
           const salary = tags.find((t) => t.toLowerCase().includes("cad")) || "Not Specified";
 
-          // Extract posted date
-          // const postedAtRaw = listing.find("div.sc-dUSlRo span").text().trim();
-          // const postedAt = postedAtRaw || new Date().toISOString() || "not spacified";
-
-          // Build apply URL
           const relativeUrl = listing.find("a.sc-hLtSKV").attr("href") || "";
           const applyUrl = relativeUrl.startsWith("http")
             ? relativeUrl
             : "https://remote.co" + relativeUrl;
 
-          // Random delay
           await new Promise((res) => setTimeout(res, Math.random() * 1500 + 500));
 
-          // Open detail page to scrape full description
           const description = "Visit the job link for full description.";
 
-          // Push final structured job
           jobs.push({
             title,
             company,
@@ -483,5 +340,140 @@ export class CrawlerService implements OnModuleInit {
     } finally {
       await page.close();
     }
+  }
+
+  async scrapeWeWorkRemotely(browser: Browser): Promise<SoftwareJob[]> {
+    const logger = new Logger("WeWorkRemotely");
+    const jobs: SoftwareJob[] = [];
+
+    try {
+      const page = await browser.newPage();
+      await page.goto("https://weworkremotely.com/categories/remote-programming-jobs", {
+        waitUntil: "networkidle2",
+      });
+
+      const html = await page.content();
+      const $ = cheerio.load(html);
+      const rows = $("article ul li:not(.jobs-by-category)");
+
+      const detailPage = await browser.newPage();
+
+      for (let i = 0; i < rows.length; i++) {
+        const row = $(rows[i]);
+
+        try {
+          const title = this.cleanText(row.find("a span.title").text());
+          const company = this.cleanText(row.find("a span.company").text());
+          const location = this.cleanText(row.find("a span.region").text() || "Remote");
+          const relativeLink = row.find("a").attr("href");
+          if (!relativeLink) continue;
+
+          const applyUrl = "https://weworkremotely.com" + relativeLink;
+          const source = "WeWorkRemotely";
+          const type = "Remote";
+          const tags: string[] = [];
+          const salary = "";
+          const companyLogo = "";
+
+          const detailed = await this.extractWeWorkRemotelyDetails(applyUrl, detailPage);
+
+          const description = detailed?.roleOverview || `Visit the job link for full description.`;
+
+          if (title && company && applyUrl) {
+            const job: SoftwareJob = {
+              title,
+              company,
+              companyLogo,
+              location,
+              salary,
+              tags,
+              applyUrl,
+              source,
+              description,
+              type,
+              detailed,
+            };
+
+            jobs.push(job);
+          }
+        } catch (rowError) {
+          logger.warn(`Failed to process job row ${i + 1}: ${rowError}`);
+        }
+      }
+
+      await detailPage.close();
+      logger.log(`Scraped ${jobs.length} jobs from WeWorkRemotely.`);
+      if (jobs.length === 0) logger.warn("No jobs found on WeWorkRemotely.");
+    } catch (err) {
+      logger.error("Error in scraping WeWorkRemotely:", err.message);
+      logger.debug(err.stack);
+    } finally {
+      logger.log("WeWorkRemotely job scraping completed.");
+    }
+
+    return jobs;
+  }
+
+  private async extractWeWorkRemotelyDetails(url: string, page: Page): Promise<JobDescription> {
+    const description: JobDescription = {
+      aboutUs: "",
+      roleOverview: "",
+      responsibilities: [],
+      requirements: {
+        mustHave: [],
+        niceToHave: [],
+      },
+      whyJoinUs: [],
+      process: [],
+      benefits: {
+        health: [],
+        financial: [],
+        timeOff: [],
+        learning: [],
+        other: [],
+      },
+    };
+
+    try {
+      await page.goto(url, {waitUntil: "networkidle2"});
+      const html = await page.content();
+      const $ = cheerio.load(html);
+      const content = $(".listing-container").text();
+      const text = this.cleanText(content);
+
+      const extractList = (label: string) => {
+        const pattern = new RegExp(`${label}:?\\s*(.*?)((?:[A-Z][a-z]+:)|$)`, "si");
+        const match = text.match(pattern);
+        return match
+          ? match[1]
+              .split(/[\n\-•]+/)
+              .map(this.cleanText)
+              .filter(Boolean)
+          : [];
+      };
+
+      description.aboutUs = extractList("About")[0] || "";
+      description.roleOverview = text.split("\n")[0];
+      description.responsibilities = extractList("Responsibilities");
+      description.requirements.mustHave = extractList("Must Have");
+      description.requirements.niceToHave = extractList("Nice to Have");
+      description.whyJoinUs = extractList("Why Join Us");
+      description.process = extractList("Interview Process");
+
+      const benefitsList = extractList("Benefits");
+      for (const benefit of benefitsList) {
+        if (/health|insurance/i.test(benefit)) description.benefits.health.push(benefit);
+        else if (/401k|retirement|equity|bonus/i.test(benefit))
+          description.benefits.financial.push(benefit);
+        else if (/vacation|leave|pto/i.test(benefit)) description.benefits.timeOff.push(benefit);
+        else if (/learning|course|training/i.test(benefit))
+          description.benefits.learning.push(benefit);
+        else description.benefits.other.push(benefit);
+      }
+    } catch (err) {
+      console.error(`Error extracting WWR job details from ${url}:`, err.message);
+    }
+
+    return description;
   }
 }
