@@ -50,7 +50,7 @@ export class Job {
   @Column({nullable: true})
   @IsOptional()
   @IsString()
-  companyLogo?: string;
+  companylogo?: string;
 
   @Column({nullable: true})
   @IsOptional()

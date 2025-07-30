@@ -107,7 +107,7 @@ export class GetJobsDto {
 
   @IsOptional()
   @IsString()
-  companyLogo?: string;
+  companylogo?: string;
 
   @IsOptional()
   @IsString()
@@ -144,7 +144,7 @@ export class DisplayJobsDto {
   company: string;
   description?: string;
   location: string;
-  companyLogo?: string;
+  companylogo?: string;
   salary?: string;
   tags: string[];
   postedAt: Date;
@@ -161,7 +161,7 @@ export class DisplayJobsDto {
     company: string;
     description?: string;
     location: string;
-    companyLogo?: string;
+    companylogo?: string;
     salary?: string;
     tags: string[];
     postedAt: Date;
@@ -174,7 +174,7 @@ export class DisplayJobsDto {
     this.company = job.company;
     this.description = job.description;
     this.location = job.location;
-    this.companyLogo = job.companyLogo;
+    this.companylogo = job.companylogo;
     this.salary = job.salary;
     this.tags = job.tags;
     this.postedAt = job.postedAt;

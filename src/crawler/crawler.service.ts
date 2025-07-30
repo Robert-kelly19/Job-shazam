@@ -32,7 +32,7 @@ interface JobDescription {
 interface SoftwareJob {
   title: string;
   company: string;
-  companyLogo?: string;
+  companylogo?: string;
   location: string;
   salary: string;
   tags: string[];
@@ -146,7 +146,7 @@ export class CrawlerService implements OnModuleInit {
         try {
           const title = this.cleanText(row.find('h2[itemprop="title"]').text());
           const company = this.cleanText(row.find('h3[itemprop="name"]').text());
-          const companyLogo = row.find("td.has-logo img").attr("src") || "";
+          const companylogo = row.find("td.has-logo img").attr("src") || "";
 
           const locations = row
             .find(".location")
@@ -169,7 +169,7 @@ export class CrawlerService implements OnModuleInit {
             const job: SoftwareJob = {
               title,
               company,
-              companyLogo,
+              companylogo,
               location,
               salary,
               tags,
@@ -373,7 +373,7 @@ export class CrawlerService implements OnModuleInit {
           const type = "Remote";
           const tags: string[] = [];
           const salary = "";
-          const companyLogo = "";
+          const companylogo = "";
 
           const detailed = await this.extractWeWorkRemotelyDetails(applyUrl, detailPage);
 
@@ -383,7 +383,7 @@ export class CrawlerService implements OnModuleInit {
             const job: SoftwareJob = {
               title,
               company,
-              companyLogo,
+              companylogo,
               location,
               salary,
               tags,
