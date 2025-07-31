@@ -47,6 +47,7 @@ enum JobSite {
   RemoteOK = "RemoteOK",
   WeWorkRemotely = "WeWorkRemotely",
   RemoteCo = "Remote.co",
+  Remotive = "Remotive",
 }
 
 @Injectable()
@@ -81,7 +82,12 @@ export class CrawlerService implements OnModuleInit {
         args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-gpu"],
       });
 
-      const sitesToCrawl = [JobSite.RemoteOK, JobSite.WeWorkRemotely, JobSite.RemoteCo];
+      const sitesToCrawl = [
+        JobSite.RemoteOK,
+        JobSite.WeWorkRemotely,
+        JobSite.RemoteCo,
+        JobSite.Remotive,
+      ];
 
       for (const site of sitesToCrawl) {
         await this.scrapeSource(site, browser);
@@ -102,6 +108,7 @@ export class CrawlerService implements OnModuleInit {
       if (site === JobSite.RemoteOK) jobs = await this.scrapeRemoteOK(browser);
       if (site === JobSite.WeWorkRemotely) jobs = await this.scrapeWeWorkRemotely(browser);
       if (site === JobSite.RemoteCo) jobs = await this.scrapeRemoteCo(browser);
+      if (site === JobSite.Remotive) jobs = await this.scrapeRemotive();
 
       this.logger.log(`Discovered ${jobs.length} jobs from ${site}.`);
       for (const job of jobs) {
@@ -475,5 +482,42 @@ export class CrawlerService implements OnModuleInit {
     }
 
     return description;
+  }
+
+  private async scrapeRemotive(): Promise<SoftwareJob[]> {
+    const logger = new Logger("Remotive");
+    const jobs: SoftwareJob[] = [];
+
+    try {
+      const res = await fetch("https://remotive.io/api/remote-jobs?category=software-dev");
+      const data = await res.json();
+
+      for (const item of data.jobs) {
+        try {
+          const job: SoftwareJob = {
+            title: item.title,
+            company: item.company_name,
+            companylogo: item.company_logo || "",
+            location: item.candidate_required_location || "Remote",
+            salary: item.salary || "Not specified",
+            tags: item.tags || [],
+            applyUrl: item.url,
+            source: "Remotive",
+            description: item.description,
+            type: item.job_type || "Remote",
+          };
+
+          jobs.push(job);
+        } catch (err) {
+          logger.warn(`Failed to process a Remotive job: ${err.message}`);
+        }
+      }
+
+      logger.log(`Scraped ${jobs.length} jobs from Remotive.`);
+    } catch (err) {
+      logger.error(`Failed to fetch Remotive jobs: ${err.message}`);
+    }
+
+    return jobs;
   }
 }
