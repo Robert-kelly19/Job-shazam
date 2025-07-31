@@ -52,20 +52,34 @@ export class MatchService {
           "matchPercentage": 85,
           "feedback": "Strong React skills, some AWS experience missing."
         }
-        `;
+      `;
 
-    const result = await openai.chat.completions.create({
-      model: "gpt-4",
-      messages: [{role: "user", content: prompt}],
-      temperature: 0.3,
-    });
-
-    const resText = result.choices[0].message?.content || "{}";
     try {
-      return JSON.parse(resText);
-    } catch (error) {
-      console.log(error);
-      return {matchPercentage: 0, feedback: "Failed to parse AI response."};
+      const result = await openai.chat.completions.create({
+        model: "gpt-4.1",
+        messages: [{role: "user", content: prompt}],
+        temperature: 0.3,
+        stream: true,
+      });
+
+      let fullRes = "";
+      for await (const chunks of result) {
+        const content = chunks.choices?.[0].delta?.content;
+        if (content) fullRes += content;
+      }
+
+      try {
+        return JSON.parse(fullRes);
+      } catch (error) {
+        console.error(error);
+        return {matchPercentage: 0, feedback: "Failed to parse AI response." + fullRes};
+      }
+    } catch (err) {
+      console.error("Error occured while getting response:", err);
+      return {
+        matchPercentage: 0,
+        feedback: "fail to stream response.",
+      };
     }
   }
 }
