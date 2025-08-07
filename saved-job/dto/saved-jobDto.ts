@@ -4,9 +4,9 @@ import { IsEnum, IsString} from "class-validator";
 export enum jobStatus {
     SAVED = 'saved',
     APPLIED = 'applied',
+   ACCEPTED = 'accepted',
+    Interview = 'interview',
     REJECTED = 'rejected',
-    RECRUITED = 'recruited',
-    UNRESPONSIVE = 'unresponsive',
 }
 
 export class UpdateStatusDto {
@@ -16,7 +16,7 @@ export class UpdateStatusDto {
 
 export class savedJobDto {
     @IsString()
-    job: string;
+    jobId: string;
 
     @IsEnum(jobStatus)
     status: jobStatus;

@@ -68,7 +68,7 @@ export class MailService {
       from: `"JobShazam"<${this.config.get<string>("MAIL_USER")}>`,
       to: email,
       subject: "JobShazam Login Link",
-      html: `<p>Click to login: <a href="${link}">${link}</a></p>`,
+      html: `<p><a href="${link}">Click to login</a></p>`,
     };
     try {
       const info = await this.transporter.sendMail(mailOptions);

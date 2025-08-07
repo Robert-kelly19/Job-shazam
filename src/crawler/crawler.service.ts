@@ -84,9 +84,9 @@ export class CrawlerService implements OnModuleInit {
 
       const sitesToCrawl = [
         JobSite.RemoteOK,
+        JobSite.Remotive,
         JobSite.WeWorkRemotely,
         JobSite.RemoteCo,
-        JobSite.Remotive,
       ];
 
       for (const site of sitesToCrawl) {
@@ -106,9 +106,9 @@ export class CrawlerService implements OnModuleInit {
       this.logger.log(`🏃‍♂️ Crawling ${site}...`);
       let jobs: SoftwareJob[] = [];
       if (site === JobSite.RemoteOK) jobs = await this.scrapeRemoteOK(browser);
+      if (site === JobSite.Remotive) jobs = await this.scrapeRemotive();
       if (site === JobSite.WeWorkRemotely) jobs = await this.scrapeWeWorkRemotely(browser);
       if (site === JobSite.RemoteCo) jobs = await this.scrapeRemoteCo(browser);
-      if (site === JobSite.Remotive) jobs = await this.scrapeRemotive();
 
       this.logger.log(`Discovered ${jobs.length} jobs from ${site}.`);
       for (const job of jobs) {
@@ -125,11 +125,15 @@ export class CrawlerService implements OnModuleInit {
   }
 
   private cleanText(input: string): string {
-    return input
-      .replace(/\n|\t/g, " ")
+    if (!input) return "";
+
+    const textWithoutTags = input
+      .replace(/<[^>]*>/g, " ")
+      .replace(/&[^;\s]+;/g, " ")
       .replace(/\s+/g, " ")
-      .replace(/^\s+|\s+$/g, "")
-      .replace(/\\+/g, "");
+      .trim();
+
+    return textWithoutTags;
   }
 
   private async scrapeRemoteOK(browser: Browser): Promise<SoftwareJob[]> {
@@ -489,7 +493,7 @@ export class CrawlerService implements OnModuleInit {
     const jobs: SoftwareJob[] = [];
 
     try {
-      const res = await fetch("https://remotive.io/api/remote-jobs?category=software-dev");
+      const res = await fetch("https://remotive.com/api/remote-jobs?category=software-dev");
       const data = await res.json();
 
       for (const item of data.jobs) {
@@ -503,7 +507,7 @@ export class CrawlerService implements OnModuleInit {
             tags: item.tags || [],
             applyUrl: item.url,
             source: "Remotive",
-            description: item.description,
+            description: this.cleanText(item.description),
             type: item.job_type || "Remote",
           };
 
@@ -514,6 +518,9 @@ export class CrawlerService implements OnModuleInit {
       }
 
       logger.log(`Scraped ${jobs.length} jobs from Remotive.`);
+      if (jobs.length > 0) {
+        logger.log(`Inserting ${jobs.length} jobs into the database.`);
+      }
     } catch (err) {
       logger.error(`Failed to fetch Remotive jobs: ${err.message}`);
     }

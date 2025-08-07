@@ -1,4 +1,4 @@
-import {Controller, Post, Query, Body, Get, HttpCode} from "@nestjs/common";
+import {Controller, Post, Body, HttpCode, UnauthorizedException} from "@nestjs/common";
 import {AuthService} from "./auth.service";
 import {SendLoginDto, VerifyLinkDto} from "../../user/dto/user.dto";
 
@@ -13,9 +13,13 @@ export class AuthController {
     return {message: "Login link sent to email"};
   }
 
-  @Get("verify")
-  async verify(@Query() query: VerifyLinkDto) {
-    const jwt = await this.authService.verifyToken(query.token);
-    return {token: jwt};
+  @Post("verify")
+  async verify(@Body() body: VerifyLinkDto) {
+    try {
+      const jwt = await this.authService.verifyToken(body.token);
+      return {token: jwt};
+    } catch (err) {
+      throw new UnauthorizedException(err.message || "Invalid or expired token");
+    }
   }
 }

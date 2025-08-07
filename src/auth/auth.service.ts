@@ -15,13 +15,15 @@ export class AuthService {
   async sendMagicLink(email: string, name?: string, techstack?: string[]) {
     const token = uuidv4();
     await this.userService.createOrUpdateToken(email, token, name, techstack);
-    const link = `http://localhost:8080/auth/verify?token=${token}`;
+    const link = `http://localhost:3000/verifyPage?token=${token}`;
     await this.mailService.SendLogInMail(email, link);
   }
 
   async verifyToken(token: string) {
     const user = await this.userService.findByToken(token);
-    if (!user) throw new UnauthorizedException("Invalid or expired token");
+    if (!user) {
+      throw new UnauthorizedException("Invalid or expired token");
+    }
 
     await this.userService.markUsedToken(user.id);
 

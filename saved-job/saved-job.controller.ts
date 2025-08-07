@@ -32,7 +32,7 @@ async create(
   @Request() req: AuthenticatedRequest,
 ) {
   const userId = req.user.userId;
-const existing = await this.savedJob.findByUserAndJob(userId, dto.job);
+const existing = await this.savedJob.findByUserAndJob(userId, dto.jobId);
 if (existing) {
   throw new ConflictException('Job already saved by this user');
 }

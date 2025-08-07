@@ -14,7 +14,7 @@ export class SavedJobService {
  async CreateSavedJob(dto: savedJobDto & { user: string }): Promise<SavedJob> {
   const newSavedJob = this.savedJobRepo.create({
     user: { id: dto.user }, 
-    job: { id: dto.job },
+    job: { id: dto.jobId },
     status: dto.status,
   });
 
@@ -50,4 +50,12 @@ async GetSavedJobs(userId: string): Promise<SavedJob[]> {
     savedJob.status = status;
     return await this.savedJobRepo.save(savedJob);
   }
+
+  // async deleteSave(userId:string, jobId:string): Promise<SavedJob[]>{
+  //   const saveJob = await this.savedJobRepo.find({
+  //     where: {user:{id:userId},job:{id:jobId}},
+  //     relations:['user', 'job']
+  //   });
+  //   return await this.savedJobRepo.delete(saveJob)
+  // }
 }
