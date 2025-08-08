@@ -1,0 +1,34 @@
+# Node modules (always rebuild inside container)
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Local environment files
+.env
+.env.* # in case you have multiple environments
+
+# Logs
+*.log
+logs
+*.pid
+
+# Test coverage
+coverage
+*.lcov
+
+# Build output
+dist
+
+# Editor & system files
+.DS_Store
+.vscode
+.idea
+*.swp
+*.swo
+
+# Git & other VCS
+.git
+.gitignore
+
+# Docker artifacts (optional, if you generate these)
+docker-compose.override.yml
