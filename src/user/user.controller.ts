@@ -37,11 +37,11 @@ export class UserController {
     if (!file) {
       throw new InternalServerErrorException("No file uploaded");
     }
-    const email = (req.user as any).email;
+    const email = (req.user as {email: string}).email;
     try {
       const user = await this.userService.uploadCv(email, file);
       return {message: "CV upload was successful", cv: user.cv};
-    } catch (err) {
+    } catch {
       throw new InternalServerErrorException("Upload failed");
     }
   }
@@ -49,7 +49,7 @@ export class UserController {
   // Get CV - GET /user/cv
   @Get("cv")
   async getCv(@Req() req: Request, @Res() res: Response) {
-    const email = (req.user as any).email;
+    const email = (req.user as {email: string}).email;
     const user = await this.userService.findByEmail(email);
     if (!user || !user.cv) {
       throw new NotFoundException("No CV found for this user");
@@ -66,7 +66,8 @@ export class UserController {
   @Delete("cv")
   @HttpCode(200)
   async deleteCv(@Req() req: Request) {
-    const email = (req.user as any).email;
+    const email = (req.user as {email: string}).email;
+
     const user = await this.userService.findByEmail(email);
     if (!user || !user.cv) {
       throw new NotFoundException("No CV to delete");
@@ -75,9 +76,6 @@ export class UserController {
     if (existsSync(filePath)) {
       unlinkSync(filePath);
     }
-    user.cv = null;
-    await this.userService.uploadCv(email, null);
-
     return {message: "CV deleted successfully"};
   }
 }

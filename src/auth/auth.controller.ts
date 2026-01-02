@@ -1,6 +1,6 @@
 import {Controller, Post, Body, HttpCode, UnauthorizedException} from "@nestjs/common";
 import {AuthService} from "./auth.service";
-import {SendLoginDto, VerifyLinkDto} from "../../user/dto/user.dto";
+import {SendLoginDto, VerifyLinkDto} from "../user/dto/user.dto";
 
 @Controller("auth")
 export class AuthController {

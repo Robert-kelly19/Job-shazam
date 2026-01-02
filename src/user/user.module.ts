@@ -12,7 +12,7 @@ import {extname} from "path";
     TypeOrmModule.forFeature([User]),
     MulterModule.register({
       storage: diskStorage({
-        destination: "./uploads/resumes",
+        destination: "./uploads/cvs",
         filename: (req, file, cb) => {
           const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
           const ext = extname(file.originalname);

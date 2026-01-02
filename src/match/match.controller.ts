@@ -1,6 +1,6 @@
 import {Controller, HttpCode, Post, Body} from "@nestjs/common";
 import {MatchService} from "./match.service";
-import {matchDto} from "job/dto/job.dto";
+import {matchDto} from "../job/dto/job.dto";
 
 @Controller("match")
 export class MatchController {

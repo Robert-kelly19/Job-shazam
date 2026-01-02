@@ -2,7 +2,7 @@ import {Injectable} from "@nestjs/common";
 import axios from "axios";
 import pdfParse from "pdf-parse";
 import mammoth from "mammoth";
-import {matchDto} from "job/dto/job.dto";
+import {matchDto} from "../job/dto/job.dto";
 import OpenAI from "openai";
 
 const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY});
