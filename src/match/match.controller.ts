@@ -11,4 +11,10 @@ export class MatchController {
   matchcv(@Body() dto: matchDto) {
     return this.matchService.getMatch(dto);
   }
+
+  @Post("generate-cv")
+  @HttpCode(200)
+  generateCV(@Body() dto: matchDto) {
+    return this.matchService.generateTailoredCV(dto);
+  }
 }

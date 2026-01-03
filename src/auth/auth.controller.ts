@@ -6,20 +6,20 @@ import {SendLoginDto, VerifyLinkDto} from "../user/dto/user.dto";
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Post("login-link")
+  @Post("login-otp")
   @HttpCode(200)
-  async requestLink(@Body() body: SendLoginDto) {
-    await this.authService.sendMagicLink(body.email, body.name, body.techstack);
-    return {message: "Login link sent to email"};
+  async requestOtp(@Body() body: SendLoginDto) {
+    await this.authService.sendOtp(body.email, body.name, body.techstack);
+    return {message: "OTP sent to email"};
   }
 
-  @Post("verify")
-  async verify(@Body() body: VerifyLinkDto) {
+  @Post("verify-otp")
+  async verifyOtp(@Body() body: VerifyLinkDto) {
     try {
-      const jwt = await this.authService.verifyToken(body.token);
-      return {token: jwt};
+      const jwt = await this.authService.verifyOtp(body.email, body.token);
+      return {accessToken: jwt, user: await this.authService.getUserByEmail(body.email)}; // Need to fetch user details to return
     } catch (err) {
-      throw new UnauthorizedException(err.message || "Invalid or expired token");
+      throw new UnauthorizedException(err.message || "Invalid or expired OTP");
     }
   }
 }

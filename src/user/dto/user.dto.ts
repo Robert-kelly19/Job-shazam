@@ -17,9 +17,13 @@ export class SendLoginDto {
 }
 
 export class VerifyLinkDto {
-  @IsString()
   @IsNotEmpty()
+  @IsString()
   token: string;
+
+  @IsNotEmpty()
+  @IsEmail()
+  email: string;
 }
 
 export class getUserDto {

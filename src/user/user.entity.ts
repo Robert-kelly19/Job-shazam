@@ -1,14 +1,6 @@
 import {Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, OneToMany} from "typeorm";
 
-import {
-  IsArray,
-  IsBoolean,
-  IsEmail,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  IsUUID,
-} from "class-validator";
+import {IsArray, IsBoolean, IsEmail, IsNotEmpty, IsOptional, IsString} from "class-validator";
 
 import {SavedJob} from "../saved-job/saved-job.entity";
 import {Job} from "../job/job.entity";
@@ -40,7 +32,6 @@ export class User {
   cv?: string;
 
   @Column({nullable: true})
-  @IsUUID()
   @IsNotEmpty()
   @IsString()
   token: string;

@@ -77,4 +77,28 @@ export class MailService {
       return error;
     }
   }
+
+  async SendOtpMail(email: string, otp: string) {
+    const mailOptions = {
+      from: `"JobShazam"<${this.config.get<string>("MAIL_USER")}>`,
+      to: email,
+      subject: "Your JobShazam Login OTP",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #333;">Login Verification</h2>
+          <p>Your verification code is:</p>
+          <div style="background-color: #f4f4f4; padding: 15px; text-align: center; border-radius: 5px; font-size: 24px; letter-spacing: 5px; font-weight: bold; margin: 20px 0;">
+            ${otp}
+          </div>
+          <p>This code will expire shortly. Do not share it with anyone.</p>
+        </div>
+      `,
+    };
+    try {
+      const info = await this.transporter.sendMail(mailOptions);
+      return info.response;
+    } catch (error) {
+      return error;
+    }
+  }
 }

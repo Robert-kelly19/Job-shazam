@@ -1,5 +1,4 @@
 import {Injectable, UnauthorizedException} from "@nestjs/common";
-import {v4 as uuidv4} from "uuid";
 import {UserService} from "../user/user.service";
 import {MailService} from "src/mail/mail.service";
 import {JwtService} from "@nestjs/jwt";
@@ -12,21 +11,25 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async sendMagicLink(email: string, name?: string, techstack?: string[]) {
-    const token = uuidv4();
-    await this.userService.createOrUpdateToken(email, token, name, techstack);
-    const link = `http://localhost:3000/verifyPage?token=${token}`;
-    await this.mailService.SendLogInMail(email, link);
+  async sendOtp(email: string, name?: string, techstack?: string[]) {
+    // Generate 6 digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    await this.userService.createOrUpdateToken(email, otp, name, techstack);
+    await this.mailService.SendOtpMail(email, otp);
   }
 
-  async verifyToken(token: string) {
-    const user = await this.userService.findByToken(token);
-    if (!user) {
-      throw new UnauthorizedException("Invalid or expired token");
+  async verifyOtp(email: string, otp: string) {
+    const user = await this.userService.findByEmail(email);
+    if (!user || user.token !== otp) {
+      throw new UnauthorizedException("Invalid or expired OTP");
     }
 
     await this.userService.markUsedToken(user.id);
 
     return this.jwtService.sign({sub: user.id, email: user.email});
+  }
+
+  async getUserByEmail(email: string) {
+    return this.userService.findByEmail(email);
   }
 }
