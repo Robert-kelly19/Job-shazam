@@ -10,9 +10,6 @@ import {ScheduleModule} from "@nestjs/schedule";
 import {CrawlerModule} from "./crawler/crawler.module";
 import {MailModule} from "./mail/mail.module";
 import {AuthModule} from "./auth/auth.module";
-import {User} from "./user/user.entity";
-import {SavedJob} from "./saved-job/saved-job.entity";
-import {Job} from "./job/job.entity";
 import {MatchModule} from "./match/match.module";
 
 @Module({
@@ -26,12 +23,27 @@ import {MatchModule} from "./match/match.module";
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => {
+        const databaseUrl = config.get<string>("DATABASE_URL");
+
+        if (databaseUrl) {
+          //Production
+          return {
+            type: "postgres",
+            url: databaseUrl,
+            ssl: {rejectUnauthorized: false},
+            autoLoadEntities: true,
+            synchronize: false,
+          };
+        }
+
+        // Local development
         const requiredEnvs = ["DB_HOST", "DB_USER", "DB_PASSWORD", "DB_NAME", "DB_PORT"];
         for (const envVar of requiredEnvs) {
           if (!config.get(envVar)) {
-            throw new Error(`Missing environment variable for local DB setup: ${envVar}`);
+            throw new Error(`Missing environment variable: ${envVar}`);
           }
         }
+
         return {
           type: "postgres",
           host: config.get<string>("DB_HOST"),
@@ -40,11 +52,11 @@ import {MatchModule} from "./match/match.module";
           database: config.get<string>("DB_NAME"),
           port: config.get<number>("DB_PORT"),
           autoLoadEntities: true,
-          entities: [User, SavedJob, Job],
-          synchronize: config.get<string>("NODE_ENV") !== "production",
+          synchronize: true,
         };
       },
     }),
+
     UserModule,
     SavedJobModule,
     JobModule,
