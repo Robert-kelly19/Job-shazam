@@ -10,7 +10,7 @@
     "clean": "rm -rf dist",
     "prebuild": "npm run clean",
     "build": "npx puppeteer browsers install chrome && nest build",
-    "start": "node dist/main.js",
+    "start": "node dist/src/main.js",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "npm run build && node dist/src/main.js",
