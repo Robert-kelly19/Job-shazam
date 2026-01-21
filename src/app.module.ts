@@ -37,12 +37,27 @@ import {ComparisonModule} from "./comparison/comparison.module";
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => {
+        const databaseUrl = config.get<string>("DATABASE_URL");
+
+        if (databaseUrl) {
+          //Production
+          return {
+            type: "postgres",
+            url: databaseUrl,
+            ssl: {rejectUnauthorized: false},
+            autoLoadEntities: true,
+            synchronize: false,
+          };
+        }
+
+        // Local development
         const requiredEnvs = ["DB_HOST", "DB_USER", "DB_PASSWORD", "DB_NAME", "DB_PORT"];
         for (const envVar of requiredEnvs) {
           if (!config.get(envVar)) {
-            throw new Error(`Missing environment variable for local DB setup: ${envVar}`);
+            throw new Error(`Missing environment variable: ${envVar}`);
           }
         }
+
         return {
           type: "postgres",
           host: config.get<string>("DB_HOST"),
@@ -56,6 +71,7 @@ import {ComparisonModule} from "./comparison/comparison.module";
         };
       },
     }),
+
     UserModule,
     SavedJobModule,
     JobModule,
