@@ -13,18 +13,25 @@ async function bootstrap() {
       origin: string | undefined,
       callback: (err: Error | null, allow?: boolean) => void,
     ) => {
-      // Allow localhost, 127.0.0.1, and any local network addresses
+      const allowedOrigins = ["localhost", "127.0.0.1", "192.168.", "10.0.", "172.16."];
+
+      const frontendUrl = process.env.FRONTEND_URL;
+
+      // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin) {
-        callback(null, true);
-      } else if (
-        origin.includes("localhost") ||
-        origin.includes("127.0.0.1") ||
-        origin.includes("192.168.") ||
-        origin.includes("10.0.") ||
-        origin.includes("172.16.")
+        return callback(null, true);
+      }
+
+      // Check if origin matches allowed patterns or the specific frontend URL
+      if (
+        (frontendUrl && origin === frontendUrl) ||
+        // Allow Vercel preview deployments
+        origin.endsWith(".vercel.app") ||
+        allowedOrigins.some((prefix) => origin.includes(prefix))
       ) {
         callback(null, true);
       } else {
+        console.warn(`Blocked CORS for origin: ${origin}`);
         callback(new Error(`CORS blocked for origin: ${origin}`));
       }
     },
