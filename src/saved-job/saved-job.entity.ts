@@ -13,7 +13,7 @@ export class SavedJob {
   job: Job;
 
   @Column({default: "saved"})
-  status: "saved" | "applied" | "rejected" | "interview" | "accepted";
+  status: "saved" | "applied" | "rejected" | "interview" | "accepted" | "tracked";
 
   @CreateDateColumn()
   savedAt: Date;

@@ -8,16 +8,30 @@ async function bootstrap() {
 
   app.useGlobalPipes(new ValidationPipe({transform: true, whitelist: true}));
 
-  const allowedOrigins: string[] = ["http://localhost:3000"];
-
   const corsOptions: CorsOptions = {
     origin: (
       origin: string | undefined,
       callback: (err: Error | null, allow?: boolean) => void,
     ) => {
-      if (!origin || allowedOrigins.includes(origin)) {
+      const allowedOrigins = ["localhost", "127.0.0.1", "192.168.", "10.0.", "172.16."];
+
+      const frontendUrl = process.env.FRONTEND_URL;
+
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      // Check if origin matches allowed patterns or the specific frontend URL
+      if (
+        (frontendUrl && origin === frontendUrl) ||
+        // Allow Vercel preview deployments
+        origin.endsWith(".vercel.app") ||
+        allowedOrigins.some((prefix) => origin.includes(prefix))
+      ) {
         callback(null, true);
       } else {
+        console.warn(`Blocked CORS for origin: ${origin}`);
         callback(new Error(`CORS blocked for origin: ${origin}`));
       }
     },
