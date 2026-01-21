@@ -204,9 +204,17 @@ export class FilterJobDto {
 // MATCH DTO
 export class matchDto {
   @IsString()
+  @IsNotEmpty()
+  @MaxLength(50000, {
+    message: "Job description is too long (max 50,000 characters)",
+  })
   description: string;
 
   @IsString()
+  @IsNotEmpty()
+  @MaxLength(100000, {
+    message: "CV content is too long (max 100,000 characters)",
+  })
   cv: string;
 }
 

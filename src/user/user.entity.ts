@@ -4,6 +4,8 @@ import {IsArray, IsBoolean, IsEmail, IsNotEmpty, IsOptional, IsString} from "cla
 
 import {SavedJob} from "../saved-job/saved-job.entity";
 import {Job} from "../job/job.entity";
+import {Resume} from "../resume/resume.entity";
+import {Comparison} from "../comparison/comparison.entity";
 import {Type} from "class-transformer";
 
 @Entity("user")
@@ -48,4 +50,10 @@ export class User {
 
   @OneToMany(() => Job, (job) => job.user)
   jobs: Job[];
+
+  @OneToMany(() => Resume, (resume) => resume.user)
+  resumes: Resume[];
+
+  @OneToMany(() => Comparison, (comparison) => comparison.user)
+  comparisons: Comparison[];
 }

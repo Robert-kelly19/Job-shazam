@@ -8,14 +8,21 @@ async function bootstrap() {
 
   app.useGlobalPipes(new ValidationPipe({transform: true, whitelist: true}));
 
-  const allowedOrigins: string[] = ["http://localhost:3000"];
-
   const corsOptions: CorsOptions = {
     origin: (
       origin: string | undefined,
       callback: (err: Error | null, allow?: boolean) => void,
     ) => {
-      if (!origin || allowedOrigins.includes(origin)) {
+      // Allow localhost, 127.0.0.1, and any local network addresses
+      if (!origin) {
+        callback(null, true);
+      } else if (
+        origin.includes("localhost") ||
+        origin.includes("127.0.0.1") ||
+        origin.includes("192.168.") ||
+        origin.includes("10.0.") ||
+        origin.includes("172.16.")
+      ) {
         callback(null, true);
       } else {
         callback(new Error(`CORS blocked for origin: ${origin}`));

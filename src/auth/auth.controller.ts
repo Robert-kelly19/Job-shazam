@@ -1,4 +1,14 @@
-import {Controller, Post, Body, HttpCode, UnauthorizedException} from "@nestjs/common";
+import {
+  Controller,
+  Post,
+  Body,
+  HttpCode,
+  UnauthorizedException,
+  Get,
+  UseGuards,
+  Request,
+} from "@nestjs/common";
+import {AuthGuard} from "@nestjs/passport";
 import {AuthService} from "./auth.service";
 import {SendLoginDto, VerifyLinkDto} from "../user/dto/user.dto";
 
@@ -21,5 +31,12 @@ export class AuthController {
     } catch (err) {
       throw new UnauthorizedException(err.message || "Invalid or expired OTP");
     }
+  }
+
+  @Get("validate")
+  @UseGuards(AuthGuard("jwt"))
+  async validateToken(@Request() req: {user: {email: string}}) {
+    // The AuthGuard automatically attaches the user to the request object if the token is valid
+    return this.authService.getUserByEmail(req.user.email);
   }
 }

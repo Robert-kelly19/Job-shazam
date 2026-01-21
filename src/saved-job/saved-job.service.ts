@@ -49,11 +49,13 @@ export class SavedJobService {
     return await this.savedJobRepo.save(savedJob);
   }
 
-  // async deleteSave(userId:string, jobId:string): Promise<SavedJob[]>{
-  //   const saveJob = await this.savedJobRepo.find({
-  //     where: {user:{id:userId},job:{id:jobId}},
-  //     relations:['user', 'job']
-  //   });
-  //   return await this.savedJobRepo.delete(saveJob)
-  // }
+  async removeSavedJob(userId: string, jobId: string): Promise<void> {
+    const savedJob = await this.savedJobRepo.findOne({
+      where: {user: {id: userId}, job: {id: jobId}},
+    });
+
+    if (savedJob) {
+      await this.savedJobRepo.remove(savedJob);
+    }
+  }
 }

@@ -6,6 +6,7 @@ export enum jobStatus {
   ACCEPTED = "accepted",
   Interview = "interview",
   REJECTED = "rejected",
+  TRACKED = "tracked",
 }
 
 export class UpdateStatusDto {

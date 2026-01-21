@@ -8,6 +8,7 @@ import {
   Post,
   Request,
   ConflictException,
+  Delete,
 } from "@nestjs/common";
 import {SavedJobService} from "./saved-job.service";
 import {AuthGuard} from "@nestjs/passport";
@@ -68,5 +69,12 @@ export class SavedJobController {
     const userId = req.user.userId;
     const updated = await this.savedJob.UpdateStatus(userId, jobId, body.status);
     return {message: "Status updated", data: updated};
+  }
+
+  @Delete(":jobId")
+  async remove(@Param("jobId") jobId: string, @Request() req: AuthenticatedRequest) {
+    const userId = req.user.userId;
+    await this.savedJob.removeSavedJob(userId, jobId);
+    return {message: "Saved job removed"};
   }
 }
