@@ -2,8 +2,11 @@ import {Injectable, BadRequestException} from "@nestjs/common";
 import {InjectRepository} from "@nestjs/typeorm";
 import {Repository} from "typeorm";
 import {Resume} from "./resume.entity";
-import pdfParse from "pdf-parse";
 import mammoth from "mammoth";
+
+// pdfjs-dist is a CommonJS library with no proper ESM exports
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const pdfjsLib = require("pdfjs-dist/build/pdf");
 
 @Injectable()
 export class ResumeService {
@@ -14,8 +17,8 @@ export class ResumeService {
 
   async inferFileType(buffer: Buffer): Promise<"pdf" | "docx"> {
     try {
-      const fileTypeModule = await import("file-type");
-      const detected = await fileTypeModule.fromBuffer(buffer);
+      const {fileTypeFromBuffer} = await import("file-type");
+      const detected = await fileTypeFromBuffer(buffer);
 
       if (detected?.mime === "application/pdf") return "pdf";
       if (
@@ -42,8 +45,16 @@ export class ResumeService {
 
   async extractText(buffer: Buffer, fileType: "pdf" | "docx"): Promise<string> {
     if (fileType === "pdf") {
-      const data = await pdfParse(buffer);
-      return data.text;
+      const pdf = await pdfjsLib.getDocument({data: buffer}).promise;
+      let text = "";
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        text += textContent.items.map((item: any) => item.str).join(" ");
+        text += "\n";
+      }
+      return text;
     } else if (fileType === "docx") {
       const res = await mammoth.extractRawText({buffer});
       return res.value;

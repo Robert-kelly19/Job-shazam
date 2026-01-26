@@ -2,12 +2,15 @@ import {Injectable, Inject, HttpException, HttpStatus} from "@nestjs/common";
 import {CACHE_MANAGER} from "@nestjs/cache-manager";
 import {Cache} from "cache-manager";
 import axios from "axios";
-import pdfParse from "pdf-parse";
 import mammoth from "mammoth";
 import {matchDto} from "../job/dto/job.dto";
 import OpenAI from "openai";
 import {GoogleGenerativeAI} from "@google/generative-ai";
 import * as crypto from "crypto";
+
+// pdfjs-dist is a CommonJS library with no proper ESM exports
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const pdfjsLib = require("pdfjs-dist/build/pdf");
 
 @Injectable()
 export class MatchService {
@@ -65,9 +68,9 @@ export class MatchService {
   private async inferFileType(buffer: Buffer): Promise<"pdf" | "docx"> {
     // Try to detect file type from file signature (magic numbers)
     try {
-      // For file-type v16, use dynamic import with fromBuffer
-      const fileTypeModule = await import("file-type");
-      const detected = await fileTypeModule.fromBuffer(buffer);
+      // For file-type v16, use fileTypeFromBuffer
+      const {fileTypeFromBuffer} = await import("file-type");
+      const detected = await fileTypeFromBuffer(buffer);
 
       if (detected?.mime === "application/pdf") return "pdf";
       if (
@@ -92,8 +95,16 @@ export class MatchService {
 
   private async getText(buffer: Buffer, fileType: "pdf" | "docx"): Promise<string> {
     if (fileType === "pdf") {
-      const data = await pdfParse(buffer);
-      return data.text;
+      const pdf = await pdfjsLib.getDocument({data: buffer}).promise;
+      let text = "";
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        text += textContent.items.map((item: any) => item.str).join(" ");
+        text += "\n";
+      }
+      return text;
     } else if (fileType === "docx") {
       const res = await mammoth.extractRawText({buffer});
       return res.value;
