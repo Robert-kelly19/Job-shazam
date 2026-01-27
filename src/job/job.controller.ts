@@ -25,4 +25,9 @@ export class JobController {
   async findOne(@Param("id") id: string): Promise<DisplayJobsDto | null> {
     return this.jobService.findOne(id);
   }
+
+  @Post(":id/structure")
+  async structure(@Param("id") id: string): Promise<DisplayJobsDto | null> {
+    return this.jobService.structureJobDescription(id);
+  }
 }

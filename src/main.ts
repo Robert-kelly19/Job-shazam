@@ -13,14 +13,22 @@ async function bootstrap() {
       origin: string | undefined,
       callback: (err: Error | null, allow?: boolean) => void,
     ) => {
-      const allowedOrigins = ["localhost", "127.0.0.1", "192.168.", "10.0.", "172.16."];
-
       const frontendUrl = process.env.FRONTEND_URL;
+
+      console.log(`[CORS] Incoming Origin: ${origin}`);
+      console.log(`[CORS] Configured Frontend URL: ${frontendUrl}`);
+
+      // Diagnostic bypass
+      if (frontendUrl === "ANY") {
+        return callback(null, true);
+      }
 
       // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin) {
         return callback(null, true);
       }
+
+      const allowedOrigins = ["localhost", "127.0.0.1", "192.168.", "10.0.", "172.16."];
 
       // Check if origin matches allowed patterns or the specific frontend URL
       if (
@@ -31,7 +39,7 @@ async function bootstrap() {
       ) {
         callback(null, true);
       } else {
-        console.warn(`Blocked CORS for origin: ${origin}`);
+        console.warn(`[CORS] Blocked origin: ${origin}`);
         callback(new Error(`CORS blocked for origin: ${origin}`));
       }
     },

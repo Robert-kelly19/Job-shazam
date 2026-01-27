@@ -18,18 +18,18 @@ export class RemoteCoStrategy implements ScraperStrategy {
 
     try {
       await page.goto(this.baseUrl, {waitUntil: "domcontentloaded"});
-
       await StealthUtil.randomDelay(1000, 3000);
 
       const html = await page.content();
       const $ = cheerio.load(html);
+      const listings = $("div.sc-fBtIwJ.cVivxR").toArray().slice(0, 10); // Limit to 10 for performance and to avoid blocks
 
-      const listings = $("div.sc-fBtIwJ.cVivxR").toArray();
+      const detailPage = await browser.newPage();
+      await StealthUtil.applyStealth(detailPage);
 
       for (const el of listings) {
         try {
           const listing = $(el);
-
           const title = this.cleanText(
             listing.find("a.sc-hLtSKV").text().trim() ||
               listing.find("a").first().text().trim() ||
@@ -57,9 +57,20 @@ export class RemoteCoStrategy implements ScraperStrategy {
             : "https://remote.co" + relativeUrl;
 
           // Stealth delay
-          await StealthUtil.randomDelay(200, 800);
+          await StealthUtil.randomDelay(500, 1500);
 
-          const description = "Visit the job link for full description.";
+          let description = "Visit the job link for full description.";
+          try {
+            await detailPage.goto(applyUrl, {waitUntil: "domcontentloaded"});
+            const detailHtml = await detailPage.content();
+            const $detail = cheerio.load(detailHtml);
+            const rawDescription = $detail(".job_description").html();
+            if (rawDescription) {
+              description = this.cleanHtml(rawDescription);
+            }
+          } catch (detailErr) {
+            this.logger.warn(`Failed to scrape details for ${applyUrl}: ${detailErr.message}`);
+          }
 
           const job: Partial<Job> = {
             title,
@@ -70,13 +81,13 @@ export class RemoteCoStrategy implements ScraperStrategy {
             applyUrl,
             source: "Remote.co",
             description,
-            // type: 'Remote',
           };
           jobs.push(job);
         } catch (jobErr) {
           this.logger.warn(`Failed to scrape one Remote.co job: ${jobErr}`);
         }
       }
+      await detailPage.close();
     } catch (err) {
       this.logger.error(`Failed to scrape Remote.co: ${err.message}`);
     } finally {
@@ -93,5 +104,31 @@ export class RemoteCoStrategy implements ScraperStrategy {
       .replace(/&[^;\s]+;/g, " ")
       .replace(/\s+/g, " ")
       .trim();
+  }
+
+  private cleanHtml(html: string): string {
+    if (!html) return "";
+    const $ = cheerio.load(html);
+
+    // Remove unwanted elements
+    $("script, style, iframe, link, meta, svg, path").remove();
+
+    // Remove all attributes except href for links
+    $("*").each((i, el) => {
+      if (el.type === "tag") {
+        const element = $(el);
+        const name = el.name;
+        const attribs = el.attribs;
+
+        for (const attr in attribs) {
+          if (attr !== "href" || name !== "a") {
+            element.removeAttr(attr);
+          }
+        }
+      }
+    });
+
+    // Extract content from body/html if cheerio added them
+    return $("body").html()?.trim() || $.html().trim();
   }
 }
