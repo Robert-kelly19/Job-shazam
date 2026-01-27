@@ -57,7 +57,7 @@
     "openai": "^6.16.0",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
-    "pdfjs-dist": "^5.4.530",
+    "pdfjs-dist": "^3.11.174",
     "pg": "^8.17.2",
     "puppeteer": "^24.36.0",
     "puppeteer-extra": "^3.3.6",
