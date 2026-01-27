@@ -23,7 +23,6 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "pre-commit": "lint-staged",
     "prepare": "if [ \"$NODE_ENV\" != \"production\" ]; then husky install; fi",
-    "postinstall": "npx puppeteer install chrome",
     "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js",
     "migration:generate": "npm run typeorm -- migration:generate src/migrations/NewMigration -d data-source.ts",
     "migration:run": "ts-node -r tsconfig-paths/register node_modules/typeorm/cli.js migration:run -d data-source.ts",
