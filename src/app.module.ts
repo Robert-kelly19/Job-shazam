@@ -46,7 +46,7 @@ import {ComparisonModule} from "./comparison/comparison.module";
             url: databaseUrl,
             ssl: {rejectUnauthorized: false},
             autoLoadEntities: true,
-            synchronize: false,
+            synchronize: true, // TEMPORARY: Set to true once to create tables on Render
           };
         }
 
