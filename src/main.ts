@@ -28,7 +28,14 @@ async function bootstrap() {
         return callback(null, true);
       }
 
-      const allowedOrigins = ["localhost", "127.0.0.1", "192.168.", "10.0.", "172.16."];
+      const allowedOrigins = [
+        "localhost",
+        "127.0.0.1",
+        "192.168.",
+        "10.0.",
+        "172.16.",
+        "https://job-shazam-frontend-sv2h.vercel.app",
+      ];
 
       // Check if origin matches allowed patterns or the specific frontend URL
       if (
