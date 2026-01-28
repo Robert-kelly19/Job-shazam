@@ -20,4 +20,32 @@ export class AppService implements OnModuleInit {
       this.logger.error("error while connecting to database", error.message);
     }
   }
+
+  async checkDbStatus() {
+    try {
+      // 1. Check if connection is alive
+      const isInitialized = this.datasource.isInitialized;
+
+      // 2. Check if the 'job' table exists (common source of 500 on /jobs)
+      // This will throw if the table doesn't exist
+      const jobCount = await this.datasource.query('SELECT COUNT(*) FROM "job"');
+
+      return {
+        status: "OK",
+        database: isInitialized ? "Connected" : "Disconnected",
+        tables: {
+          job: "Found",
+          count: jobCount[0].count,
+        },
+      };
+    } catch (error) {
+      return {
+        status: "ERROR",
+        message: error.message,
+        hint: error.message.includes('relation "job" does not exist')
+          ? "The database schema is missing. You need to enable 'synchronize: true' in app.module.ts for the first run."
+          : "Check your DATABASE_URL and SSL settings.",
+      };
+    }
+  }
 }
