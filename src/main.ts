@@ -1,12 +1,12 @@
-import {NestFactory} from "@nestjs/core";
-import {AppModule} from "./app.module";
-import {Logger, ValidationPipe} from "@nestjs/common";
-import {CorsOptions} from "@nestjs/common/interfaces/external/cors-options.interface";
+import { NestFactory } from "@nestjs/core";
+import { AppModule } from "./app.module";
+import { Logger, ValidationPipe } from "@nestjs/common";
+import { CorsOptions } from "@nestjs/common/interfaces/external/cors-options.interface";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  app.useGlobalPipes(new ValidationPipe({transform: true, whitelist: true}));
+  app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
 
   const corsOptions: CorsOptions = {
     origin: (
@@ -42,11 +42,11 @@ async function bootstrap() {
         (frontendUrl && origin === frontendUrl) ||
         // Allow Vercel preview deployments
         origin.endsWith(".vercel.app") ||
-        allowedOrigins.some((prefix) => origin.includes(prefix))
+        allowedOrigins.some((pattern) => origin.includes(pattern))
       ) {
         callback(null, true);
       } else {
-        console.warn(`[CORS] Blocked origin: ${origin}`);
+        console.warn(`[CORS] Rejected origin: ${origin}`);
         callback(new Error(`CORS blocked for origin: ${origin}`));
       }
     },

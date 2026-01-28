@@ -14,7 +14,9 @@ export class AuthService {
   async sendOtp(email: string, name?: string, techstack?: string[]) {
     // Generate 6 digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    console.log(`[AuthService] Generated OTP ${otp} for ${email}`);
     await this.userService.createOrUpdateToken(email, otp, name, techstack);
+    console.log(`[AuthService] Token saved. Calling MailService...`);
     await this.mailService.SendOtpMail(email, otp);
   }
 

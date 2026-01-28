@@ -1,4 +1,4 @@
-import {Injectable} from "@nestjs/common";
+import {Injectable, Logger} from "@nestjs/common";
 import {ConfigService} from "@nestjs/config";
 import * as nodemailer from "nodemailer";
 import {GetMailDto, SendMailDto} from "./dto/maildto";
@@ -6,6 +6,7 @@ import {GetMailDto, SendMailDto} from "./dto/maildto";
 @Injectable()
 export class MailService {
   private transporter: nodemailer.Transporter;
+  private readonly logger = new Logger(MailService.name);
 
   constructor(private config: ConfigService) {
     this.transporter = nodemailer.createTransport({
@@ -96,9 +97,11 @@ export class MailService {
     };
     try {
       const info = await this.transporter.sendMail(mailOptions);
+      this.logger.log(`OTP mail sent successfully to ${email}`);
       return info.response;
     } catch (error) {
-      return error;
+      this.logger.error(`Failed to send OTP mail to ${email}:`, error);
+      throw error;
     }
   }
 }
