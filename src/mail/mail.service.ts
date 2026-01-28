@@ -9,6 +9,15 @@ export class MailService {
   private readonly logger = new Logger(MailService.name);
 
   constructor(private config: ConfigService) {
+    const user = this.config.get<string>("MAIL_USER");
+    const pass = this.config.get<string>("MAIL_PASSWORD");
+
+    if (!user || !pass) {
+      this.logger.error(
+        "SMTP credentials missing! Check MAIL_USER and MAIL_PASSWORD environment variables.",
+      );
+    }
+
     this.transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
